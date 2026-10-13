@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link rel="stylesheet" href="style02.css">
+</head>
+<body>
+    <header>
+        <h1>Latihan CSS Background</h1>
+    </header>
+    <!--Section 1-->
+    <section id="hero">
+        <div class="container">
+            <h2>1. Background Image & Opacity</h2>
+            <p>Section ini menggunakan gambar sebagai background.</p>
+            <p>kontainer ini menggunakan <code>opacity</code> ; 0,85, sehigga teks dan background kontainer ini menjadi sedikit transparan terhadap gambar utama di belakangnya.</p>
+            <div class="desc">
+                CSS : <code>background-image</code> : url (...) <br> CSS : <code>Opacity</code> : 0.85
+            </div>   
+        </div>
+        
+    </section>
+
+    <section id="repeat-size">
+        <div class="container">
+            <h2>2. Color, Repeat, & Size</h2>
+            <p>Section ini menggunakan <code>background-color</code> biru dengan gambar pola (pattern) transparan.</p> 
+            <p>Pola tersebut diatur agar mengulang ke seluruh arah (<code>repeat</code>)dengan ukuran asli (<code>size : auto</code>)</p>
+            
+            <div class="size-contain-demo"></div>
+                <p>kotak di ataws mendemostrasikan <code>background-size.contain</code>di dalam kontainer yang memilki warna background berbeda.
+                </p>
+
+            <div class="desc">
+                CSS : <code>background-color : #3498db</code><br>
+                CSS : <code>background-repeat : repeat ;</code><br>
+                CSS : <code>background-size : auto | contain | cover</code>
+            </div>
+        </div>
+    </section>
+
+    <section id="side-size">
+        <div class="container">
+            <h2>3. Background Position</h2>
+            <p>Disini kita menggunakan gambar abstrak yang ukurannya diset manual (800px) dan <code>no-repeat</code>.</p>
+            <p>Gambar tersebut diposisikan secara spesifik di kanan bawah section ini.</p>
+            <div class="desc">
+                CSS : <code>background-position :right bottom;</code> <br>
+                CSS : <code>background-repeat : no-repeat;</code>
+            </div>
+        </div>
+    </section>
+    
+    <!--section 4-->
+    <section id="herohero">
+        <div class="container">
+            <h2>4. Background Attachment (Fixed)</h2>
+            <p>ini adalah efek favorit banyak desainer :**Parallax**</p>
+            <p>Coba scroll halaman ini naik dan turun. Gambar background di section ini diam (fixed) ditempatnya,</p>
+            <p>sementara konten teks diatasnya bergerak melewati gambar.</p>
+            <div class="desc">
+                CSS : <code>background-attachment : fixed ;</code><br>
+                CSS : <code>background-size : cover ;</code>
+            </div>
+        </div>
+    </section>
+    
+    <footer>
+        <p>&copy BBPVP Bandung</p>
+    </footer>
+</body>
+</html>

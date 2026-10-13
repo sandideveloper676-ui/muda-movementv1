@@ -1,0 +1,213 @@
+*{
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+main{
+    margin-top: 60px;
+}
+
+section{
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    padding: 100px 20px;
+    align-items: center;
+    text-align: center;
+}
+
+header{
+    width: 100%;
+    background-color: #333333;
+    padding: 1rem;
+    box-shadow: 0 2px 5px rgba(red, green, blue, alpha);
+    position: fixed;
+    top: 0;
+    z-index: 1000;
+}
+
+body{
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    line-height: 1.6;
+    color: white;
+}
+
+h1{
+    color: white;
+    font-size: 2rem;
+    text-align: left;
+}
+
+.white-30{
+    color: white;
+    font-size: 30px;
+    font-weight: bold;
+}
+
+.white-20{
+    color: white;
+    font-size: 16px;
+}
+span{
+    color: orange;
+}
+
+ul{
+    padding: 0;
+    margin: 0;
+    list-style-type: none;
+    overflow: hidden;
+    background-color: #333333;
+}
+
+ul li{
+    float: left;
+}
+
+ul li a{
+    display: block;
+    color: white;
+    text-align: center;
+    padding: 14px 16px;
+    text-decoration: none;
+}
+
+ul li a:hover{
+    background-color: #111111;
+}
+
+/*membangun website pertama*/
+
+.box{
+    text-align: justify;
+    margin: 5px;
+}
+
+.flex-container{
+    display: flex;
+    justify-content: space-between;
+    padding: 10px;
+    border-radius: 8px;
+}
+
+#hero{
+    background-image: url(image.png);
+    background-size: cover;
+    background-position:center;
+}
+
+.container{
+    max-width: 800px;
+    margin: 0 auto 40px auto;
+    padding: 10pc;
+}
+
+#hero.container{
+    opacity: 0.85;
+}
+
+.btn-link:link{
+    display: inline-block;
+    text-decoration: none;
+    background-color: orange;
+    color: #111111;
+    padding: 15px 30px;
+    border-radius: 8px;
+    font-weight: bold;
+    transition: all 0.3s ease;
+    border: 2px solid orange; 
+}
+
+.btn-link:hover{
+    background-color: orange;
+    color:black;
+    border-color:orange;
+    transform: translateY(3px);
+    box-shadow: 0 5px 10px rgba(red, green, blue, alpha);
+}
+.btn-link:active{
+    background-color: orange;
+    transform: translateY(1px); /*efek tertekan ke bawah*/
+    box-shadow: 0 2px 5px rgba(red, green, blue, alpha);
+}
+
+.btn-link:visited{
+    background-color: orange;
+    border-color: gray;
+    box-shadow: white;
+}
+
+/* Tentang Kami*/
+h3{
+    font-size: 30px;
+    color: black;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+h4{
+    font-size: 20px;
+    font-weight: bold;
+    color: black;
+}
+
+p{
+    color: black;
+    font-size: 12px;
+}
+
+.desc{
+    background: white;
+    border-radius: 12px;
+    max-width: 900px;
+    margin: 0 auto 40px auto;
+    padding: 30px;
+}
+
+.selection-container{
+    display: flex;
+    justify-content:space-around;
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    gap: 20px;
+}
+
+.hex{
+    text-align: justify;
+    background-color: orange;
+    padding: 15px;
+    text-align: center;
+    line-height: 20px;
+}
+
+/* Hubungi kami*/
+
+form{
+    padding: 0;
+    margin: 0;
+    list-style-type: none;
+    display: grid;
+    width: 20rem;
+    gap: 5px;
+}
+
+button{
+    display: inline-block;
+    text-decoration: none;
+    background-color: orange;
+    color: #111111;
+    padding: 15px 30px;
+    border-radius: 8px;
+    font-weight: bold;
+    transition: all 0.3s ease;
+    border: 2px solid orange; 
+}
+
+/*footer*/
+footer{
+    background-color: #333333;
+    color: white;
+    padding: 20px;
+    text-align: center;
+}

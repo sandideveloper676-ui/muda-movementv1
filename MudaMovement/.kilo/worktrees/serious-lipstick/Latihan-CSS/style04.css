@@ -1,0 +1,66 @@
+*{
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+body{
+    background-color: #f4f7f6;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    display:flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    color: #333;
+}
+
+.container{
+    background: white;
+    padding: 40px;
+    border-radius: 15px;
+    box-shadow :0 10px 25px rgba(red, green, blue, alpha);
+    text-align: center;
+    max-width: 500px;
+}
+
+h2{
+    margin-bottom: 30px;
+    color: #00468b;
+}
+
+p {
+    margin-bottom : 30px;
+    line-height: 1.6;
+}
+
+/*1. alink-link yang belum diklik*/
+
+.btn-link:link{
+    display: inline-block;
+    text-decoration: none;
+    background-color: #00468b;
+    color: white;
+    padding: 15px 30px;
+    border-radius: 8px;
+    font-weight: bold;
+    transition: all 0.3s ease;
+    border: 2px solid #00468b; 
+}
+
+.btn-link:hover{
+    background-color: #ffcc00;
+    color:#00468b;
+    border-color:#00468b;
+    transform: translateY(3px);
+    box-shadow: 0 5px 10px rgba;
+}
+.btn-link:active{
+    background-color: #e6b800;
+    transform: translateY(1px); /*efek tertekan ke bawah*/
+    box-shadow: 0 2px 5px rgba;
+}
+
+.btn-link:visited{
+    background-color: #6c757d;
+    border-color: #6c7574;
+    box-shadow: white;
+}
