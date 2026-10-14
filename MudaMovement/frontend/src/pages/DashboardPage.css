@@ -341,7 +341,8 @@
 .member-whatsapp-button:hover { 
   transform: translateY(-3px);
   box-shadow: var(--shadow-btn-hover);
-  background: var(--color-btn-hover); }
+  background: var(--color-btn-hover); 
+}
 
 .member-config-message {
   max-width: 17rem !important;
