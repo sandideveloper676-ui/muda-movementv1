@@ -1,7 +1,6 @@
 import bcrypt from 'bcrypt'
 import { createHash, randomBytes } from 'node:crypto'
 import jwt from 'jsonwebtoken'
-import nodemailer from 'nodemailer'
 import pool from '../config/database.js'
 
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
@@ -45,22 +44,31 @@ function isDuplicateEmail(error) {
   return error.code === 'ER_DUP_ENTRY'
 }
 
-function createMailTransport() {
-  const { SMTP_HOST, SMTP_PORT, SMTP_SECURE, SMTP_USER, SMTP_PASSWORD } = process.env
-  const port = Number(SMTP_PORT)
-  if (!SMTP_HOST || !SMTP_USER || !SMTP_PASSWORD || !Number.isInteger(port) || port < 1 || port > 65535) {
-    throw new Error('Konfigurasi SMTP belum lengkap atau tidak valid.')
-  }
-  if (SMTP_SECURE !== 'true' && SMTP_SECURE !== 'false') {
-    throw new Error('SMTP_SECURE harus bernilai true atau false.')
+async function sendPasswordResetEmail({ to, resetUrl }) {
+  const { RESEND_API_KEY, RESEND_FROM } = process.env
+  if (!RESEND_API_KEY || !RESEND_FROM) {
+    throw new Error('RESEND_API_KEY dan RESEND_FROM wajib dikonfigurasi.')
   }
 
-  return nodemailer.createTransport({
-    host: SMTP_HOST,
-    port,
-    secure: SMTP_SECURE === 'true',
-    auth: { user: SMTP_USER, pass: SMTP_PASSWORD },
+  const response = await fetch('https://api.resend.com/emails', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${RESEND_API_KEY}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      from: RESEND_FROM,
+      to: [to],
+      subject: 'Atur ulang password MUDA Movement',
+      text: `Gunakan tautan berikut untuk mengatur ulang password akun MUDA Movement Anda. Tautan berlaku selama 30 menit dan hanya dapat digunakan sekali:\n\n${resetUrl}\n\nJika Anda tidak meminta pengaturan ulang password, abaikan email ini.`,
+    }),
   })
+
+  const result = await response.json()
+  if (!response.ok) {
+    const detail = typeof result.message === 'string' ? result.message : response.statusText
+    throw new Error(`Resend API gagal (${response.status}): ${detail}`)
+  }
 }
 
 export async function requestPasswordReset(req, res) {
@@ -91,12 +99,7 @@ export async function requestPasswordReset(req, res) {
     )
 
     try {
-      await createMailTransport().sendMail({
-        from: process.env.SMTP_FROM || process.env.SMTP_USER,
-        to: normalizedEmail,
-        subject: 'Atur ulang password MUDA Movement',
-        text: `Gunakan tautan berikut untuk mengatur ulang password akun MUDA Movement Anda. Tautan berlaku selama 30 menit dan hanya dapat digunakan sekali:\n\n${resetUrl}\n\nJika Anda tidak meminta pengaturan ulang password, abaikan email ini.`,
-      })
+      await sendPasswordResetEmail({ to: normalizedEmail, resetUrl })
     } catch (error) {
       await pool.execute('DELETE FROM password_reset_tokens WHERE token_hash = ?', [tokenHash])
       throw error

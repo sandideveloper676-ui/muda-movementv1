@@ -10,6 +10,7 @@ const allowedOrigins = (process.env.CORS_ORIGIN || 'http://localhost:5173')
 const app = express()
 
 app.disable('x-powered-by')
+app.set('trust proxy', 1)
 app.use(cors({
   origin(origin, callback) {
     if (!origin || allowedOrigins.includes(origin)) {

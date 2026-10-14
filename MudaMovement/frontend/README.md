@@ -32,12 +32,9 @@ port 3001; konfigurasi proxy tersebut dipertahankan.
    `node -e "console.log(require('node:crypto').randomBytes(64).toString('hex'))"`)
    dan `WHATSAPP_GROUP_URL` di `backend/.env`.
    Atur juga `FRONTEND_URL` ke alamat frontend. Untuk mengaktifkan reset
-   password lewat email, isi `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE` (`true`
-   untuk TLS langsung, umumnya port 465; `false` untuk STARTTLS, umumnya port
-   587), `SMTP_USER`, dan `SMTP_PASSWORD`. `SMTP_USER` adalah akun yang
-   diautentikasi atau alias yang telah diizinkan penyedia SMTP. `SMTP_FROM`
-   opsional dan secara default menggunakan `SMTP_USER`. Untuk Gmail dengan
-   2-Step Verification, gunakan App Password, bukan password login Gmail.
+   password lewat email, isi `RESEND_API_KEY` dan `RESEND_FROM`. Buat API key
+   di Resend dan verifikasi domain pengirim; `RESEND_FROM` harus menggunakan
+   alamat dari domain yang sudah diverifikasi.
    `CORS_ORIGIN` dapat berisi beberapa origin dipisahkan koma saat deployment.
    Jalankan ulang `backend/sql/setup.sql` agar tabel token reset tersedia.
 4. Di terminal pertama:
@@ -100,8 +97,7 @@ Sebelum deploy:
    `NODE_ENV=production`, `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`,
    `DB_NAME`, `DB_SSL=true`, `JWT_SECRET` (acak, minimal 32 karakter),
    `CORS_ORIGIN` (origin Vercel frontend), `FRONTEND_URL` (alamat frontend
-   Vercel), `WHATSAPP_GROUP_URL`, serta konfigurasi `SMTP_HOST`, `SMTP_PORT`,
-   `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASSWORD`, dan `SMTP_FROM`.
+   Vercel), `WHATSAPP_GROUP_URL`, `RESEND_API_KEY`, dan `RESEND_FROM`.
    Simpan rahasia hanya di dashboard hosting; jangan taruh rahasia di frontend,
    Vercel, atau repository.
 4. Atur izin jaringan TiDB agar menerima koneksi dari backend hosting. Jika
