@@ -20,6 +20,7 @@ export default function LoginPage() {
   const [email, setEmail] = useState('')
   const [phone, setPhone] = useState('')
   const [password, setPassword] = useState('')
+  const [loginRole, setLoginRole] = useState('user')
   const [error, setError] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [adminSetupAvailable, setAdminSetupAvailable] = useState(false)
@@ -53,7 +54,7 @@ export default function LoginPage() {
       if (isRegistering) {
         await register(name.trim(), email.trim(), phone.trim(), password)
       } else {
-        await login(email.trim(), password)
+        await login(email.trim(), password, loginRole)
       }
       navigate(destination, { replace: true })
     } catch (loginError) {
@@ -87,7 +88,9 @@ export default function LoginPage() {
       <section className="login-panel">
         <Link to="/" className="login-back">← Kembali ke beranda</Link>
         <div className="login-form-wrap">
-          <p className="login-eyebrow login-eyebrow--blue">Dashboard member</p>
+          <p className="login-eyebrow login-eyebrow--blue">
+            {loginRole === 'admin' && !isRegistering && !isForgotPassword ? 'Dashboard admin' : 'Dashboard member'}
+          </p>
           <h1>
             {isForgotPassword
               ? 'Lupa Password?'
@@ -162,6 +165,32 @@ export default function LoginPage() {
                   required
                 />
               </>
+            )}
+
+            {!isRegistering && !isForgotPassword && (
+              <fieldset className="login-role-choice">
+                <legend>Masuk sebagai</legend>
+                <label>
+                  <input
+                    type="radio"
+                    name="login-role"
+                    value="user"
+                    checked={loginRole === 'user'}
+                    onChange={() => setLoginRole('user')}
+                  />
+                  User
+                </label>
+                <label>
+                  <input
+                    type="radio"
+                    name="login-role"
+                    value="admin"
+                    checked={loginRole === 'admin'}
+                    onChange={() => setLoginRole('admin')}
+                  />
+                  Admin
+                </label>
+              </fieldset>
             )}
 
             {!isForgotPassword && (

@@ -151,6 +151,30 @@
   font-weight: 800;
 }
 
+.login-role-choice {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-block: 0.6rem;
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--color-border-strong);
+  border-radius: 1rem;
+}
+
+.login-role-choice legend {
+  padding-inline: 0.4rem;
+  font-weight: 700;
+}
+
+.login-role-choice label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-weight: 600;
+}
+
+.login-role-choice input { accent-color: var(--color-accent); }
+
 .login-submit {
   display: flex;
   justify-content: center;

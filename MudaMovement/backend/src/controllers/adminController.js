@@ -80,7 +80,6 @@ export async function setupInitialAdmins(req, res) {
     return res.status(400).json({ error: 'Kedua admin harus menggunakan email yang berbeda.' })
   }
 
-  const passwordHashes = await Promise.all(admins.map((admin) => bcrypt.hash(admin.password, 12)))
   const connection = await pool.getConnection()
   try {
     await connection.beginTransaction()
@@ -95,17 +94,37 @@ export async function setupInitialAdmins(req, res) {
       return res.status(409).json({ error: 'Setup admin awal sudah pernah dilakukan atau tidak lagi tersedia.' })
     }
 
-    for (const [index, admin] of admins.entries()) {
-      await connection.execute(
-        `INSERT INTO users (name, email, phone, password_hash, role)
-         VALUES (?, ?, ?, ?, 'admin')`,
-        [
-          admin.name.trim(),
-          normalizeEmail(admin.email),
-          normalizePhone(admin.phone),
-          passwordHashes[index],
-        ],
+    for (const admin of admins) {
+      const normalizedEmail = normalizeEmail(admin.email)
+      const [existingRows] = await connection.execute(
+        'SELECT id, password_hash FROM users WHERE email = ? FOR UPDATE',
+        [normalizedEmail],
       )
+      if (existingRows[0]) {
+        const passwordMatches = await bcrypt.compare(admin.password, existingRows[0].password_hash)
+        if (!passwordMatches) {
+          await connection.rollback()
+          return res.status(401).json({
+            error: `Password akun ${normalizedEmail} tidak cocok. Masukkan password yang saat ini digunakan akun tersebut.`,
+          })
+        }
+        await connection.execute(
+          "UPDATE users SET role = 'admin', session_version = session_version + 1 WHERE id = ?",
+          [existingRows[0].id],
+        )
+      } else {
+        const passwordHash = await bcrypt.hash(admin.password, 12)
+        await connection.execute(
+          `INSERT INTO users (name, email, phone, password_hash, role)
+           VALUES (?, ?, ?, ?, 'admin')`,
+          [
+            admin.name.trim(),
+            normalizedEmail,
+            normalizePhone(admin.phone),
+            passwordHash,
+          ],
+        )
+      }
     }
     await connection.execute(
       'UPDATE admin_setup_state SET setup_complete = TRUE WHERE id = 1',

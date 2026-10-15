@@ -23,7 +23,9 @@ sesi diverifikasi kembali melalui `GET /api/auth/me`. Konfigurasi Vite meneruska
 
 1. Buat database dan tabel dari MySQL/TiDB SQL editor dengan menjalankan
    `backend/sql/setup.sql`. Pastikan database aktif di MySQL80 dan tabel `users`
-   sudah tersedia.
+   sudah tersedia. Skrip memilih database `Muda_movement`; samakan `DB_NAME` di
+   backend dengan nama tersebut, atau ubah `CREATE DATABASE`/`USE` pada skrip
+   sebelum menjalankannya jika database Anda memakai nama lain.
 2. Atur `backend/.env` sesuai database. Untuk MySQL lokal gunakan host
    `127.0.0.1`, port `3306`, `DB_SSL=false`, dan username/password MySQL Anda.
    Untuk TiDB Cloud gunakan endpoint cluster, port dan credential dari TiDB,
@@ -64,7 +66,9 @@ sesi diverifikasi kembali melalui `GET /api/auth/me`. Konfigurasi Vite meneruska
 2. Buka halaman login. Saat belum ada admin, tautan **Siapkan dua admin**
    mengarahkan ke formulir React `/admin-setup`.
 3. Isi kunci setup dan data untuk dua admin. Akun admin dibuat melalui aplikasi
-   dan password di-hash backend; setup hanya bisa dilakukan sekali.
+   dan password di-hash backend; setup hanya bisa dilakukan sekali. Jika email
+   sudah terdaftar sebagai user, isi password saat ini untuk mengangkat akun itu
+   menjadi admin tanpa membuat akun duplikat.
 4. Masuk dengan salah satu akun admin. Dashboard dapat mencari berdasarkan nama,
    email, atau nomor telepon; menambah, mengedit, dan menghapus akun; serta
    mengubah peran user/admin.
@@ -79,7 +83,8 @@ sebelum dipakai untuk pemulihan password.
 API autentikasi dan pengelolaan akun:
 
 - `POST /api/auth/register` mendaftarkan akun dan langsung mengembalikan JWT. 
-- `POST /api/auth/login` masuk dengan email dan password.
+- `POST /api/auth/login` masuk dengan email, password, dan pilihan `expectedRole`
+  (`user` atau `admin`); backend mencocokkan peran dengan data akun.
 - `GET /api/auth/me` membaca profil menggunakan token sesi yang valid.
 - `PATCH /api/auth/me` mengubah nama, email, dan nomor telepon milik akun yang sedang masuk.
 - `PATCH /api/auth/me/password` mengganti password setelah memverifikasi password lama.

@@ -73,7 +73,8 @@ export default function AdminSetupPage() {
           <h1>Siapkan admin</h1>
           <p className="login-subtitle">
             Masukkan kunci setup dari konfigurasi backend dan data untuk tepat dua admin.
-            Password disimpan dalam bentuk hash.
+            Untuk akun yang sudah terdaftar, masukkan password akun saat ini agar akun
+            tersebut diangkat menjadi admin. Akun baru akan dibuat jika email belum terdaftar.
           </p>
 
           {message ? (
