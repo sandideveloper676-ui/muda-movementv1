@@ -13,6 +13,22 @@ export default function Contact() {
     setOpenIndex(openIndex === index ? null : index)
   }
 
+  // Handler klik khusus untuk link email agar bisa hybrid (Mobile vs Desktop)
+  const handleChannelClick = (e, channel) => {
+    if (channel.icon === 'mail') {
+      const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent)
+      if (!isMobile) {
+        e.preventDefault()
+        const to = channel.value
+        const su = channel.subject || ''
+        const body = channel.body || ''
+        const params = new URLSearchParams({ to, su, body })
+        const webUrl = `https://mail.google.com/mail/?view=cm&fs=1&${params.toString()}`
+        window.open(webUrl, '_blank', 'noopener,noreferrer')
+      }
+    }
+  }
+
   return (
     <section id="contact" className="section contact" aria-labelledby="contact-title">
       <div className="container--wide contact__inner">
@@ -28,10 +44,10 @@ export default function Contact() {
                 const textParam = channel.text ? `?text=${encodeURIComponent(channel.text)}` : ''
                 href = `https://wa.me/${channel.value}${textParam}`
               } else if (channel.icon === 'mail') {
-                const to = encodeURIComponent(channel.value)
-                const su = channel.subject ? encodeURIComponent(channel.subject) : ''
-                const body = channel.body ? encodeURIComponent(channel.body) : ''
-                href = `https://mail.google.com/mail/?view=cm&fs=1&to=${to}&su=${su}&body=${body}`
+                const su = channel.subject || ''
+                const body = channel.body || ''
+                const params = new URLSearchParams({ subject: su, body })
+                href = `mailto:${channel.value}?${params.toString()}`
               } else if (channel.icon === 'instagram') {
                 href = `https://ig.me/m/${channel.value}`
               } else {
@@ -51,6 +67,7 @@ export default function Contact() {
                     href={href} 
                     target="_blank" 
                     rel="noopener noreferrer"
+                    onClick={(e) => handleChannelClick(e, channel)}
                     style={{ display: 'flex', gap: '1rem', alignItems: 'center', textDecoration: 'none', color: 'inherit', width: '100%' }}
                   >
                     <IconTile name={channel.icon} tone={channel.tone} />
