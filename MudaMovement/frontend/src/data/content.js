@@ -145,10 +145,10 @@ export const contact = {
   description:
     'Punya pertanyaan atau ingin berkolaborasi? Kami siap mendengar dari Anda. Hubungi tim Muda Movement melalui saluran berikut.',
   channels: [
-    { icon : 'mail', tone: 'violet', label: 'Email', value: 'info@mudamovement.com', subject: 'Tanya Program Muda Movement', body: 'Halo tim Muda Movement, saya tertarik untuk mengetahui lebih lanjut mengenai...' },
-    { icon: 'whatsapp', tone: 'amber', label: 'WhatsApp', value: '6282315581944', text: 'Halo Muda Movement, saya ingin bertanya tentang program dan kolaborasi.' },
+    { icon : 'mail', tone: 'violet', label: 'Email', value: 'mudamovement.id@gmail.com', subject: 'Tanya Program Muda Movement', body: 'Halo tim Muda Movement, saya tertarik untuk mengetahui lebih lanjut mengenai...' },
+    { icon: 'whatsapp', tone: 'amber', label: 'WhatsApp', value: '6283101726275', text: 'Halo Muda Movement, saya ingin bertanya tentang program dan kolaborasi.' },
     { icon: 'instagram', tone: 'coral', label: 'instagram', value: 'mudamovement' },
-    { icon: 'website', tone: 'violet', label: 'Website', value: 'Dashboard' },
+    { icon: 'website', tone: 'violet', label: 'Website', value: 'https://muda-movementv1.vercel.app' },
   ],
   // Data FAQ Baru
   faqs: [
@@ -210,14 +210,14 @@ export const footer = {
       type: 'whatsapp',
       icon: 'whatsapp',
       label: 'WhatsApp', 
-      value: '6282315581944', // Nomor WA (gunakan format internasional tanpa + atau 0 di depan)
+      value: '6283101726275', // Nomor WA (gunakan format internasional tanpa + atau 0 di depan)
       text: 'Halo Muda Movement, saya ingin bertanya tentang program dan kolaborasi.'
     },
     { 
       type: 'mail',
       icon: 'mail', 
       label: 'Email Kami', 
-      value: 'info@mudamovement.com',
+      value: 'mudamovement.id@gmail.com',
       subject: 'Tanya Program Muda Movement',
       body: 'Halo tim Muda Movement, saya tertarik untuk mengetahui lebih lanjut mengenai...'
     },
@@ -231,7 +231,7 @@ export const footer = {
       type: 'website',
       icon: 'website', 
       label: 'Website', 
-      href: 'https://mudamovement.com' 
+      href: 'https://muda-movementv1.vercel.app' 
     },
   ],
   copyright: 'Muda Movement — All Rights Reserved',
