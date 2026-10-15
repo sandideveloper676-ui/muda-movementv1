@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import useAuth from '../auth/useAuth'
 import ThemeToggle from '../components/layout/ThemeToggle'
 import {
+  buildGmailWebLink,
   buildPasswordHelpEmail,
   deleteAccount as deleteAccountRequest,
   fetchPublicConfig,
@@ -46,6 +47,15 @@ function MemberDashboardPage() {
     ? new Intl.DateTimeFormat('id-ID', { dateStyle: 'medium' }).format(new Date(user.createdAt))
     : '—'
   const initial = user.name?.trim().charAt(0).toUpperCase() || 'M'
+
+  function handleEmailClick(event) {
+    const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent)
+    if (!isMobile) {
+      event.preventDefault()
+      const webUrl = buildGmailWebLink(user.email, user.phone)
+      window.open(webUrl, '_blank', 'noopener,noreferrer')
+    }
+  }
 
   async function handleProfileSubmit(event) {
     event.preventDefault()
@@ -170,7 +180,11 @@ function MemberDashboardPage() {
               <p className="member-security-help">
                 Hubungi admin untuk meminta bantuan pemulihan akun. Email dan nomor WhatsApp akun Anda akan otomatis disertakan.
               </p>
-              <a className="member-action-button member-mail-link" href={buildPasswordHelpEmail(user.email, user.phone)}>
+              <a
+                className="member-action-button member-mail-link"
+                href={buildPasswordHelpEmail(user.email, user.phone)}
+                onClick={handleEmailClick}
+              >
                 Buat email ke admin
               </a>
             </section>

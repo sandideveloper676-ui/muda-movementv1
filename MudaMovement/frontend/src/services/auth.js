@@ -71,7 +71,7 @@ export function deleteAccount(token, confirmation) {
   })
 }
 
-export function buildPasswordHelpEmail(email, phone) {
+function getPasswordHelpPayload(email = '', phone = '') {
   const subject = 'Bantuan lupa password akun MUDA Movement'
   const body = [
     'Halo Admin MUDA Movement, saya lupa password akun saya.',
@@ -82,8 +82,24 @@ export function buildPasswordHelpEmail(email, phone) {
     '',
     'Terima kasih.',
   ].join('\n')
+
+  return { subject, body }
+}
+
+export function buildPasswordHelpEmail(email, phone) {
+  const { subject, body } = getPasswordHelpPayload(email, phone)
   const params = new URLSearchParams({ subject, body })
   return `mailto:mudamovement.id@gmail.com?${params.toString()}`
+}
+
+export function buildGmailWebLink(email, phone) {
+  const { subject, body } = getPasswordHelpPayload(email, phone)
+  const params = new URLSearchParams({
+    to: 'mudamovement.id@gmail.com',
+    su: subject,
+    body: body,
+  })
+  return `https://mail.google.com/mail/?view=cm&fs=1&${params.toString()}`
 }
 
 export function fetchAdminUsers(token, search = '') {
