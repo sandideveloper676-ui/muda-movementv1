@@ -86,13 +86,16 @@ function getPasswordHelpPayload(email = '', phone = '') {
   return { subject, body }
 }
 
-export function buildPasswordHelpEmail(email, phone) {
+export function buildPasswordHelpEmail(email = '', phone = '') {
   const { subject, body } = getPasswordHelpPayload(email, phone)
-  const params = new URLSearchParams({ subject, body })
-  return `mailto:mudamovement.id@gmail.com?${params.toString()}`
+  
+  const encodedSubject = encodeURIComponent(subject)
+  const encodedBody = encodeURIComponent(body)
+
+  return `mailto:mudamovement.id@gmail.com?subject=${encodedSubject}&body=${encodedBody}`
 }
 
-export function buildGmailWebLink(email, phone) {
+export function buildGmailWebLink(email = '', phone = '') {
   const { subject, body } = getPasswordHelpPayload(email, phone)
   const params = new URLSearchParams({
     to: 'mudamovement.id@gmail.com',

@@ -20,10 +20,9 @@ export default function Contact() {
       if (!isMobile) {
         e.preventDefault()
         const to = channel.value
-        const su = channel.subject || ''
-        const body = channel.body || ''
-        const params = new URLSearchParams({ to, su, body })
-        const webUrl = `https://mail.google.com/mail/?view=cm&fs=1&${params.toString()}`
+        const su = channel.subject ? encodeURIComponent(channel.subject) : ''
+        const body = channel.body ? encodeURIComponent(channel.body) : ''
+        const webUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${to}&su=${su}&body=${body}`
         window.open(webUrl, '_blank', 'noopener,noreferrer')
       }
     }
@@ -44,10 +43,9 @@ export default function Contact() {
                 const textParam = channel.text ? `?text=${encodeURIComponent(channel.text)}` : ''
                 href = `https://wa.me/${channel.value}${textParam}`
               } else if (channel.icon === 'mail') {
-                const su = channel.subject || ''
-                const body = channel.body || ''
-                const params = new URLSearchParams({ subject: su, body })
-                href = `mailto:${channel.value}?${params.toString()}`
+                const su = channel.subject ? encodeURIComponent(channel.subject) : ''
+                const body = channel.body ? encodeURIComponent(channel.body) : ''
+                href = `mailto:${channel.value}?subject=${su}&body=${body}`
               } else if (channel.icon === 'instagram') {
                 href = `https://ig.me/m/${channel.value}`
               } else {
