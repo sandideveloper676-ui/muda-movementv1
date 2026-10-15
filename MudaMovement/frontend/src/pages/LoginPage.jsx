@@ -1,7 +1,7 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom'
 import useAuth from '../auth/useAuth'
-import { requestPasswordReset } from '../services/auth'
+import { buildPasswordHelpEmail, fetchAdminSetupStatus } from '../services/auth'
 import PasswordInput from '../components/ui/PasswordInput'
 import './LoginPage.css'
 
@@ -18,30 +18,44 @@ export default function LoginPage() {
   const [mode, setMode] = useState('login')
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
+  const [phone, setPhone] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
-  const [resetNotice, setResetNotice] = useState('')
   const [submitting, setSubmitting] = useState(false)
+  const [adminSetupAvailable, setAdminSetupAvailable] = useState(false)
   const isRegistering = mode === 'register'
   const isForgotPassword = mode === 'forgot'
+
+  useEffect(() => {
+    let active = true
+    fetchAdminSetupStatus()
+      .then(({ available }) => {
+        if (active) setAdminSetupAvailable(available)
+      })
+      .catch(() => {
+        if (active) setAdminSetupAvailable(false)
+      })
+    return () => { active = false }
+  }, [])
 
   if (loading) return <main className="auth-state" role="status">Memeriksa sesi Anda...</main>
   if (user) return <Navigate to="/dashboard" replace />
 
   async function handleSubmit(event) {
     event.preventDefault()
+    if (isForgotPassword) {
+      window.location.assign(buildPasswordHelpEmail(email, phone))
+      return
+    }
     setError('')
     setSubmitting(true)
     try {
-      if (isForgotPassword) {
-        const result = await requestPasswordReset(email.trim())
-        setResetNotice(result.message)
-      } else if (isRegistering) {
-        await register(name.trim(), email.trim(), password)
+      if (isRegistering) {
+        await register(name.trim(), email.trim(), phone.trim(), password)
       } else {
         await login(email.trim(), password)
       }
-      if (!isForgotPassword) navigate(destination, { replace: true })
+      navigate(destination, { replace: true })
     } catch (loginError) {
       setError(loginError.message)
     } finally {
@@ -81,7 +95,7 @@ export default function LoginPage() {
           </h1>
           <p className="login-subtitle">
             {isForgotPassword
-              ? 'Masukkan email akun Anda. Kami akan mengirim tautan untuk mengatur ulang password.'
+              ? 'Isi email dan nomor WhatsApp yang terdaftar. Email bantuan akan disiapkan untuk dikirim ke admin.'
               : isRegistering
                 ? 'Buat akun member MUDA Movement dan langsung masuk ke dashboard.'
                 : 'Masuk untuk mengelola akun Anda di Muda Movement.'}
@@ -104,6 +118,22 @@ export default function LoginPage() {
                 />
               </>
             )}
+            {isRegistering && (
+              <>
+                <label htmlFor="register-phone">Nomor telepon/WhatsApp</label>
+                <input
+                  id="register-phone"
+                  type="tel"
+                  name="phone"
+                  autoComplete="tel"
+                  placeholder="Contoh: +6281234567890"
+                  value={phone}
+                  onChange={(event) => setPhone(event.target.value)}
+                  maxLength={24}
+                  required
+                />
+              </>
+            )}
             <label htmlFor="login-email">Email</label>
             <input
               id="login-email"
@@ -116,6 +146,23 @@ export default function LoginPage() {
               maxLength={254}
               required
             />
+
+            {isForgotPassword && (
+              <>
+                <label htmlFor="forgot-phone">Nomor telepon/WhatsApp akun</label>
+                <input
+                  id="forgot-phone"
+                  type="tel"
+                  name="phone"
+                  autoComplete="tel"
+                  placeholder="Nomor yang digunakan saat mendaftar"
+                  value={phone}
+                  onChange={(event) => setPhone(event.target.value)}
+                  maxLength={24}
+                  required
+                />
+              </>
+            )}
 
             {!isForgotPassword && (
               <>
@@ -135,10 +182,9 @@ export default function LoginPage() {
             )}
 
             {error && <p className="login-error" role="alert">{error}</p>}
-            {resetNotice && <p className="login-success" role="status">{resetNotice}</p>}
             <button className="login-submit" type="submit" disabled={submitting}>
               {submitting ? 'Memproses...' : isForgotPassword
-                ? 'Kirim tautan reset'
+                ? 'Buat email ke admin'
                 : isRegistering ? 'Daftar dan masuk' : 'Masuk ke dashboard'}
               <span aria-hidden="true">→</span>
             </button>
@@ -154,7 +200,6 @@ export default function LoginPage() {
                   onClick={() => {
                     setMode('login')
                     setError('')
-                    setResetNotice('')
                   }}
                 >
                   Kembali ke login
@@ -169,7 +214,6 @@ export default function LoginPage() {
                   onClick={() => {
                     setMode('login')
                     setError('')
-                    setResetNotice('')
                   }}
                 >
                   Masuk di sini
@@ -183,7 +227,6 @@ export default function LoginPage() {
                   onClick={() => {
                     setMode('forgot')
                     setError('')
-                    setResetNotice('')
                   }}
                 >
                   Lupa password?
@@ -196,7 +239,6 @@ export default function LoginPage() {
                   onClick={() => {
                     setMode('register')
                     setError('')
-                    setResetNotice('')
                   }}
                 >
                   Daftar di sini
@@ -204,6 +246,12 @@ export default function LoginPage() {
               </>
             )}
           </p>
+          {adminSetupAvailable && (
+            <p className="login-help">
+              Pertama kali menggunakan dashboard admin?{' '}
+              <Link className="login-mode-toggle" to="/admin-setup">Siapkan dua admin</Link>
+            </p>
+          )}
         </div>
       </section>
     </main>

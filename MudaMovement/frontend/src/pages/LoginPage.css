@@ -136,6 +136,21 @@
   outline: 2px solid color-mix(in srgb, var(--color-accent) 22%, transparent);
 }
 
+.admin-setup-fieldset {
+  display: grid;
+  gap: 0.7rem;
+  margin-top: 1.25rem;
+  padding: 1rem;
+  border: 1px solid var(--color-border);
+  border-radius: 1rem;
+}
+
+.admin-setup-fieldset legend {
+  padding-inline: 0.4rem;
+  color: var(--color-accent);
+  font-weight: 800;
+}
+
 .login-submit {
   display: flex;
   justify-content: center;

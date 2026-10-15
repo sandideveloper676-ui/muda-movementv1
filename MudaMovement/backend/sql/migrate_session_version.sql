@@ -1,3 +1,2 @@
--- Run once on existing databases to enable session revocation after password changes.
-ALTER TABLE users
-  ADD COLUMN session_version INT UNSIGNED NOT NULL DEFAULT 0;
+-- OBSOLETE for new setup: backend/sql/setup.sql now adds this column conditionally.
+-- If setup.sql has already been run, do not run this migration.

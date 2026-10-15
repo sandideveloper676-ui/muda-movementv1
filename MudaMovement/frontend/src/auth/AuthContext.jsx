@@ -74,8 +74,8 @@ export function AuthProvider({ children }) {
     acceptSession(await loginRequest(email, password))
   }, [acceptSession])
 
-  const register = useCallback(async (name, email, password) => {
-    acceptSession(await registerRequest(name, email, password))
+  const register = useCallback(async (name, email, phone, password) => {
+    acceptSession(await registerRequest(name, email, phone, password))
   }, [acceptSession])
 
   const logout = useCallback(() => {

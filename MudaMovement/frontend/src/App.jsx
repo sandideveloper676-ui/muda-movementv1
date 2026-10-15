@@ -3,8 +3,8 @@ import Navbar from './components/layout/Navbar'
 import Footer from './components/layout/Footer'
 import ProtectedRoute from './components/auth/ProtectedRoute'
 import DashboardPage from './pages/DashboardPage'
+import AdminSetupPage from './pages/AdminSetupPage'
 import LoginPage from './pages/LoginPage'
-import ResetPasswordPage from './pages/ResetPasswordPage'
 
 import Hero from './components/sections/Hero'
 import About from './components/sections/About'
@@ -44,7 +44,7 @@ export default function App() {
     <Routes>
       <Route path="/" element={<LandingPage />} />
       <Route path="/login" element={<LoginPage />} />
-      <Route path="/reset-password" element={<ResetPasswordPage />} />
+      <Route path="/admin-setup" element={<AdminSetupPage />} />
       <Route
         path="/dashboard"
         element={

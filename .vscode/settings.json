@@ -1,0 +1,24 @@
+{
+    "sqltools.connections": [
+        {
+            "mysqlOptions": {
+                "authProtocol": "default",
+                "enableSsl": "Enabled",
+                "ssl": {
+                    "ca": ""
+                }
+            },
+            "ssh": "Disabled",
+            "previewLimit": 50,
+            "server": "gateway01.ap-southeast-1.prod.aws.tidbcloud.com",
+            "port": 4000,
+            "sshOptions": {
+                "port": 22
+            },
+            "driver": "TiDB",
+            "name": "muda_movement",
+            "database": "Muda_movement",
+            "username": "4KSNuUh6R3EdGye.root"
+        }
+    ]
+}

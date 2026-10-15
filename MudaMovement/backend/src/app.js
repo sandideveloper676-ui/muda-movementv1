@@ -1,5 +1,6 @@
 import cors from 'cors'
 import express from 'express'
+import adminRoutes from './routes/adminRoutes.js'
 import authRoutes from './routes/authRoutes.js'
 
 const allowedOrigins = (process.env.CORS_ORIGIN || 'http://localhost:5173')
@@ -34,6 +35,7 @@ app.get('/api/config', (_req, res) => {
 })
 
 app.use('/api/auth', authRoutes)
+app.use('/api/admin', adminRoutes)
 
 app.use((_req, res) => {
   res.status(404).json({ error: 'Endpoint tidak ditemukan.' })

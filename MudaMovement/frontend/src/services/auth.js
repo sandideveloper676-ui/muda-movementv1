@@ -34,24 +34,10 @@ export function login(email, password) {
   })
 }
 
-export function register(name, email, password) {
+export function register(name, email, phone, password) {
   return request('/api/auth/register', {
     method: 'POST',
-    body: JSON.stringify({ name, email, password }),
-  })
-}
-
-export function requestPasswordReset(email) {
-  return request('/api/auth/password-reset/request', {
-    method: 'POST',
-    body: JSON.stringify({ email }),
-  })
-}
-
-export function resetPassword(token, password) {
-  return request('/api/auth/password-reset/confirm', {
-    method: 'POST',
-    body: JSON.stringify({ token, password }),
+    body: JSON.stringify({ name, email, phone, password }),
   })
 }
 
@@ -61,11 +47,11 @@ export function fetchCurrentUser(token) {
   })
 }
 
-export function updateProfile(token, name, email) {
+export function updateProfile(token, name, email, phone) {
   return request('/api/auth/me', {
     method: 'PATCH',
     headers: { Authorization: `Bearer ${token}` },
-    body: JSON.stringify({ name, email }),
+    body: JSON.stringify({ name, email, phone }),
   })
 }
 
@@ -77,11 +63,69 @@ export function updatePassword(token, currentPassword, newPassword) {
   })
 }
 
-export function deleteAccount(token, password) {
+export function deleteAccount(token, confirmation) {
   return request('/api/auth/me', {
     method: 'DELETE',
     headers: { Authorization: `Bearer ${token}` },
-    body: JSON.stringify({ password }),
+    body: JSON.stringify({ confirmation }),
+  })
+}
+
+export function buildPasswordHelpEmail(email, phone) {
+  const subject = 'Bantuan lupa password akun MUDA Movement'
+  const body = [
+    'Halo Admin MUDA Movement, saya lupa password akun saya.',
+    '',
+    'Mohon bantuan untuk pemulihan akses akun. Berikut data akun saya:',
+    `Email: ${email.trim()}`,
+    `Nomor telepon/WhatsApp: ${phone.trim()}`,
+    '',
+    'Terima kasih.',
+  ].join('\n')
+  const params = new URLSearchParams({ subject, body })
+  return `mailto:mudamovement.id@gmail.com?${params.toString()}`
+}
+
+export function fetchAdminUsers(token, search = '') {
+  const query = new URLSearchParams()
+  if (search.trim()) query.set('search', search.trim())
+  const queryString = query.toString()
+  return request(`/api/admin/users${queryString ? `?${queryString}` : ''}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  })
+}
+
+export function createAdminUser(token, user) {
+  return request('/api/admin/users', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}` },
+    body: JSON.stringify(user),
+  })
+}
+
+export function updateAdminUser(token, id, user) {
+  return request(`/api/admin/users/${encodeURIComponent(id)}`, {
+    method: 'PATCH',
+    headers: { Authorization: `Bearer ${token}` },
+    body: JSON.stringify(user),
+  })
+}
+
+export function deleteAdminUser(token, id) {
+  return request(`/api/admin/users/${encodeURIComponent(id)}`, {
+    method: 'DELETE',
+    headers: { Authorization: `Bearer ${token}` },
+  })
+}
+
+export function fetchAdminSetupStatus() {
+  return request('/api/admin/setup/status')
+}
+
+export function setupInitialAdmins(setupKey, admins) {
+  return request('/api/admin/setup', {
+    method: 'POST',
+    body: JSON.stringify({ setupKey, admins }),
   })
 }
 
