@@ -2,29 +2,32 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import useAuth from '../auth/useAuth'
 import ThemeToggle from '../components/layout/ThemeToggle'
-import PasswordInput from '../components/ui/PasswordInput'
 import {
+  buildPasswordHelpEmail,
   deleteAccount as deleteAccountRequest,
   fetchPublicConfig,
-  requestPasswordReset,
   updateProfile as updateProfileRequest,
 } from '../services/auth'
+import AdminDashboardPage from './AdminDashboardPage'
 import './DashboardPage.css'
 
 export default function DashboardPage() {
+  const { user } = useAuth()
+  return user.role === 'admin' ? <AdminDashboardPage /> : <MemberDashboardPage />
+}
+
+function MemberDashboardPage() {
   const { user, token, logout, setCurrentUser } = useAuth()
   const [whatsappUrl, setWhatsappUrl] = useState('')
   const [configError, setConfigError] = useState('')
   const [name, setName] = useState(user.name)
   const [email, setEmail] = useState(user.email)
-  const [deletePassword, setDeletePassword] = useState('')
+  const [phone, setPhone] = useState(user.phone || '')
+  const [deleteConfirmation, setDeleteConfirmation] = useState('')
   const [profileMessage, setProfileMessage] = useState('')
-  const [passwordMessage, setPasswordMessage] = useState('')
   const [profileError, setProfileError] = useState('')
-  const [passwordError, setPasswordError] = useState('')
   const [deleteError, setDeleteError] = useState('')
   const [savingProfile, setSavingProfile] = useState(false)
-  const [savingPassword, setSavingPassword] = useState(false)
   const [deletingAccount, setDeletingAccount] = useState(false)
 
   useEffect(() => {
@@ -50,10 +53,11 @@ export default function DashboardPage() {
     setProfileMessage('')
     setSavingProfile(true)
     try {
-      const result = await updateProfileRequest(token, name.trim(), email.trim())
+      const result = await updateProfileRequest(token, name.trim(), email.trim(), phone.trim())
       setCurrentUser(result.user)
       setName(result.user.name)
       setEmail(result.user.email)
+      setPhone(result.user.phone)
       setProfileMessage('Profil berhasil diperbarui.')
     } catch (error) {
       setProfileError(error.message)
@@ -62,27 +66,13 @@ export default function DashboardPage() {
     }
   }
 
-  async function handlePasswordSubmit(event) {
-    event.preventDefault()
-    setPasswordError('')
-    setPasswordMessage('')
-    setSavingPassword(true)
-    try {
-      const result = await requestPasswordReset(user.email)
-      setPasswordMessage(result.message)
-    } catch (error) {
-      setPasswordError(error.message)
-    } finally {
-      setSavingPassword(false)
-    }
-  }
-
   async function handleDeleteSubmit(event) {
     event.preventDefault()
     setDeleteError('')
     setDeletingAccount(true)
     try {
-      await deleteAccountRequest(token, deletePassword)
+      const result = await deleteAccountRequest(token, deleteConfirmation)
+      window.alert(result.message)
       logout()
       window.location.replace('/')
     } catch (error) {
@@ -157,6 +147,15 @@ export default function DashboardPage() {
                   maxLength={254}
                   required
                 />
+                <label htmlFor="profile-phone">Nomor telepon/WhatsApp</label>
+                <input
+                  id="profile-phone"
+                  type="tel"
+                  value={phone}
+                  onChange={(event) => setPhone(event.target.value)}
+                  maxLength={24}
+                  required
+                />
                 {profileError && <p className="member-form-message is-error" role="alert">{profileError}</p>}
                 {profileMessage && <p className="member-form-message is-success" role="status">{profileMessage}</p>}
                 <button className="member-action-button" type="submit" disabled={savingProfile}>
@@ -167,17 +166,13 @@ export default function DashboardPage() {
 
             <section className="member-card member-card--password">
               <p className="member-eyebrow">Keamanan</p>
-              <h2>Ubah password</h2>
+              <h2>Lupa password?</h2>
               <p className="member-security-help">
-                Kami akan mengirim tautan reset sekali pakai ke <strong>{user.email}</strong>. Anda tidak perlu mengingat password lama.
+                Hubungi admin untuk meminta bantuan pemulihan akun. Email dan nomor WhatsApp akun Anda akan otomatis disertakan.
               </p>
-              <form className="member-form" onSubmit={handlePasswordSubmit}>
-                {passwordError && <p className="member-form-message is-error" role="alert">{passwordError}</p>}
-                {passwordMessage && <p className="member-form-message is-success" role="status">{passwordMessage}</p>}
-                <button className="member-action-button" type="submit" disabled={savingPassword}>
-                  {savingPassword ? 'Mengirim tautan...' : 'Kirim tautan reset'}
-                </button>
-              </form>
+              <a className="member-action-button member-mail-link" href={buildPasswordHelpEmail(user.email, user.phone)}>
+                Buat email ke admin
+              </a>
             </section>
 
             <section className="member-card member-card--about">
@@ -217,14 +212,13 @@ export default function DashboardPage() {
                 <p>Penghapusan akun bersifat permanen dan Anda akan keluar dari dashboard.</p>
               </div>
               <form className="member-form" onSubmit={handleDeleteSubmit}>
-                <label htmlFor="delete-password">Konfirmasi dengan password Anda</label>
-                <PasswordInput
-                  id="delete-password"
-                  autoComplete="current-password"
-                  aria-label="Konfirmasi password Anda"
-                  value={deletePassword}
-                  onChange={(event) => setDeletePassword(event.target.value)}
-                  maxLength={72}
+                <label htmlFor="delete-confirmation">Ketik “hapus akun” untuk mengonfirmasi</label>
+                <input
+                  id="delete-confirmation"
+                  type="text"
+                  value={deleteConfirmation}
+                  onChange={(event) => setDeleteConfirmation(event.target.value)}
+                  autoComplete="off"
                   required
                 />
                 {deleteError && <p className="member-form-message is-error" role="alert">{deleteError}</p>}

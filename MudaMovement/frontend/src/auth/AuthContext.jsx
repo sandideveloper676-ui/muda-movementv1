@@ -70,12 +70,12 @@ export function AuthProvider({ children }) {
     setAuthError('')
   }, [])
 
-  const login = useCallback(async (email, password) => {
-    acceptSession(await loginRequest(email, password))
+  const login = useCallback(async (email, password, expectedRole) => {
+    acceptSession(await loginRequest(email, password, expectedRole))
   }, [acceptSession])
 
-  const register = useCallback(async (name, email, password) => {
-    acceptSession(await registerRequest(name, email, password))
+  const register = useCallback(async (name, email, phone, password) => {
+    acceptSession(await registerRequest(name, email, phone, password))
   }, [acceptSession])
 
   const logout = useCallback(() => {

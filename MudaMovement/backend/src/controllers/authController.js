@@ -1,15 +1,19 @@
 import bcrypt from 'bcrypt'
-import { createHash, randomBytes } from 'node:crypto'
 import jwt from 'jsonwebtoken'
 import pool from '../config/database.js'
-
-const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+import {
+  isValidEmail,
+  isValidPhone,
+  normalizeEmail,
+  normalizePhone,
+} from '../utils/accountValidation.js'
 
 function publicUser(row) {
   return {
     id: String(row.id),
     name: row.name,
     email: row.email,
+    phone: row.phone,
     role: row.role || 'user', // Gunakan row.role dari DB agar dinamis
     createdAt: row.created_at,
   }
@@ -28,12 +32,6 @@ function validateName(name) {
   return typeof name === 'string' && name.trim().length > 0 && name.trim().length <= 120
 }
 
-function validateEmail(email) {
-  return typeof email === 'string'
-    && email.trim().length <= 254
-    && emailPattern.test(email.trim().toLowerCase())
-}
-
 function validatePassword(password) {
   return typeof password === 'string'
     && password.length >= 8
@@ -44,134 +42,31 @@ function isDuplicateEmail(error) {
   return error.code === 'ER_DUP_ENTRY'
 }
 
-async function sendPasswordResetEmail({ to, resetUrl }) {
-  const { RESEND_API_KEY, RESEND_FROM } = process.env
-  if (!RESEND_API_KEY || !RESEND_FROM) {
-    throw new Error('RESEND_API_KEY dan RESEND_FROM wajib dikonfigurasi.')
-  }
-
-  const response = await fetch('https://api.resend.com/emails', {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${RESEND_API_KEY}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      from: RESEND_FROM,
-      to: [to],
-      subject: 'Atur ulang password MUDA Movement',
-      text: `Gunakan tautan berikut untuk mengatur ulang password akun MUDA Movement Anda. Tautan berlaku selama 30 menit dan hanya dapat digunakan sekali:\n\n${resetUrl}\n\nJika Anda tidak meminta pengaturan ulang password, abaikan email ini.`,
-    }),
-  })
-
-  const result = await response.json()
-  if (!response.ok) {
-    const detail = typeof result.message === 'string' ? result.message : response.statusText
-    throw new Error(`Resend API gagal (${response.status}): ${detail}`)
-  }
-}
-
-export async function requestPasswordReset(req, res) {
-  const { email } = req.body ?? {}
-  if (!validateEmail(email)) {
-    return res.status(400).json({ error: 'Format email tidak valid.' })
-  }
-
-  const normalizedEmail = email.trim().toLowerCase()
-  const [rows] = await pool.execute(
-    'SELECT id FROM users WHERE email = ? LIMIT 1',
-    [normalizedEmail],
-  )
-
-  if (rows[0]) {
-    const token = randomBytes(32).toString('hex')
-    const tokenHash = createHash('sha256').update(token).digest('hex')
-    const frontendUrl = process.env.FRONTEND_URL
-    if (!frontendUrl) throw new Error('FRONTEND_URL belum dikonfigurasi.')
-    const resetUrl = new URL('/reset-password', frontendUrl)
-    resetUrl.searchParams.set('token', token)
-
-    await pool.execute(
-      `INSERT INTO password_reset_tokens (token_hash, user_id, expires_at)
-       VALUES (?, ?, DATE_ADD(UTC_TIMESTAMP(), INTERVAL 30 MINUTE))
-       ON DUPLICATE KEY UPDATE token_hash = VALUES(token_hash), expires_at = VALUES(expires_at)`,
-      [tokenHash, rows[0].id],
-    )
-
-    try {
-      await sendPasswordResetEmail({ to: normalizedEmail, resetUrl })
-    } catch (error) {
-      await pool.execute('DELETE FROM password_reset_tokens WHERE token_hash = ?', [tokenHash])
-      throw error
-    }
-  }
-
-  return res.json({
-    message: 'Jika email terdaftar, tautan untuk mengatur ulang password akan dikirim ke email tersebut.',
-  })
-}
-
-export async function resetPassword(req, res) {
-  const { token, password } = req.body ?? {}
-  if (typeof token !== 'string' || !/^[a-f0-9]{64}$/i.test(token)) {
-    return res.status(400).json({ error: 'Tautan reset tidak valid atau sudah kedaluwarsa.' })
-  }
-  if (!validatePassword(password)) {
-    return res.status(400).json({ error: 'Password baru harus minimal 8 karakter dan maksimal 72 byte.' })
-  }
-
-  const tokenHash = createHash('sha256').update(token).digest('hex')
-  const connection = await pool.getConnection()
-  try {
-    await connection.beginTransaction()
-    const [rows] = await connection.execute(
-      'SELECT user_id FROM password_reset_tokens WHERE token_hash = ? AND expires_at > UTC_TIMESTAMP() FOR UPDATE',
-      [tokenHash],
-    )
-    if (!rows[0]) {
-      await connection.rollback()
-      return res.status(400).json({ error: 'Tautan reset tidak valid atau sudah kedaluwarsa.' })
-    }
-
-    const passwordHash = await bcrypt.hash(password, 12)
-    await connection.execute(
-      'UPDATE users SET password_hash = ?, session_version = session_version + 1 WHERE id = ?',
-      [passwordHash, rows[0].user_id],
-    )
-    await connection.execute('DELETE FROM password_reset_tokens WHERE user_id = ?', [rows[0].user_id])
-    await connection.commit()
-  } catch (error) {
-    await connection.rollback()
-    throw error
-  } finally {
-    connection.release()
-  }
-
-  return res.json({ message: 'Password berhasil diatur ulang. Silakan masuk dengan password baru.' })
-}
-
 export async function register(req, res) {
-  const { name, email, password } = req.body ?? {}
+  const { name, email, phone, password } = req.body ?? {}
 
   if (!validateName(name)) {
     return res.status(400).json({ error: 'Nama wajib diisi dan maksimal 120 karakter.' })
   }
-  if (!validateEmail(email)) {
+  if (!isValidEmail(email)) {
     return res.status(400).json({ error: 'Format email tidak valid.' })
+  }
+  if (!isValidPhone(phone)) {
+    return res.status(400).json({ error: 'Nomor telepon/WhatsApp harus terdiri dari 8–16 digit.' })
   }
   if (!validatePassword(password)) {
     return res.status(400).json({ error: 'Password harus minimal 8 karakter dan maksimal 72 byte.' })
   }
 
   try {
-    const normalizedEmail = email.trim().toLowerCase()
+    const normalizedEmail = normalizeEmail(email)
     const passwordHash = await bcrypt.hash(password, 12)
     const [result] = await pool.execute(
-      'INSERT INTO users (name, email, password_hash) VALUES (?, ?, ?)',
-      [name.trim(), normalizedEmail, passwordHash],
+      'INSERT INTO users (name, email, phone, password_hash) VALUES (?, ?, ?, ?)',
+      [name.trim(), normalizedEmail, normalizePhone(phone), passwordHash],
     )
     const [rows] = await pool.execute(
-      'SELECT id, name, email, role, created_at, session_version FROM users WHERE id = ? LIMIT 1',
+      'SELECT id, name, email, phone, role, created_at, session_version FROM users WHERE id = ? LIMIT 1',
       [result.insertId],
     )
     const user = rows[0]
@@ -189,14 +84,17 @@ export async function register(req, res) {
 }
 
 export async function login(req, res) {
-  const { email, password } = req.body ?? {}
+  const { email, password, expectedRole = 'user' } = req.body ?? {}
 
   if (typeof email !== 'string' || typeof password !== 'string') {
     return res.status(400).json({ error: 'Email dan password wajib diisi.' })
   }
+  if (!['user', 'admin'].includes(expectedRole)) {
+    return res.status(400).json({ error: 'Jenis login tidak valid.' })
+  }
 
-  const normalizedEmail = email.trim().toLowerCase()
-  if (normalizedEmail.length > 254 || !emailPattern.test(normalizedEmail)) {
+  const normalizedEmail = normalizeEmail(email)
+  if (!isValidEmail(normalizedEmail)) {
     return res.status(400).json({ error: 'Format email tidak valid.' })
   }
   if (!password || Buffer.byteLength(password, 'utf8') > 72) {
@@ -204,7 +102,7 @@ export async function login(req, res) {
   }
 
   const [rows] = await pool.execute(
-    'SELECT id, name, email, password_hash, role, created_at, session_version FROM users WHERE email = ? LIMIT 1',
+    'SELECT id, name, email, phone, password_hash, role, created_at, session_version FROM users WHERE email = ? LIMIT 1',
     [normalizedEmail],
   )
   const user = rows[0]
@@ -215,6 +113,13 @@ export async function login(req, res) {
   if (!(await bcrypt.compare(password, user.password_hash))) {
     return res.status(401).json({ error: 'Password salah. Silakan coba lagi atau gunakan fitur lupa password.' })
   }
+  if (user.role !== expectedRole) {
+    return res.status(403).json({
+      error: expectedRole === 'admin'
+        ? 'Akun ini belum memiliki akses admin. Pilih login sebagai user atau hubungi admin.'
+        : 'Akun ini adalah admin. Silakan pilih login sebagai admin.',
+    })
+  }
 
   return res.json({
     token: createToken(user.id, user.session_version),
@@ -224,7 +129,7 @@ export async function login(req, res) {
 
 export async function me(req, res) {
   const [rows] = await pool.execute(
-    'SELECT id, name, email, role, created_at FROM users WHERE id = ? LIMIT 1',
+    'SELECT id, name, email, phone, role, created_at FROM users WHERE id = ? LIMIT 1',
     [req.userId],
   )
 
@@ -236,18 +141,21 @@ export async function me(req, res) {
 }
 
 export async function updateProfile(req, res) {
-  const { name, email } = req.body ?? {}
+  const { name, email, phone } = req.body ?? {}
   if (!validateName(name)) {
     return res.status(400).json({ error: 'Nama wajib diisi dan maksimal 120 karakter.' })
   }
-  if (!validateEmail(email)) {
+  if (!isValidEmail(email)) {
     return res.status(400).json({ error: 'Format email tidak valid.' })
+  }
+  if (!isValidPhone(phone)) {
+    return res.status(400).json({ error: 'Nomor telepon/WhatsApp harus terdiri dari 8–16 digit.' })
   }
 
   try {
     await pool.execute(
-      'UPDATE users SET name = ?, email = ? WHERE id = ?',
-      [name.trim(), email.trim().toLowerCase(), req.userId],
+      'UPDATE users SET name = ?, email = ?, phone = ? WHERE id = ?',
+      [name.trim(), normalizeEmail(email), normalizePhone(phone), req.userId],
     )
   } catch (error) {
     if (isDuplicateEmail(error)) {
@@ -257,7 +165,7 @@ export async function updateProfile(req, res) {
   }
 
   const [rows] = await pool.execute(
-    'SELECT id, name, email, role, created_at FROM users WHERE id = ? LIMIT 1',
+    'SELECT id, name, email, phone, role, created_at FROM users WHERE id = ? LIMIT 1',
     [req.userId],
   )
   if (!rows[0]) return res.status(404).json({ error: 'Akun tidak ditemukan.' })
@@ -295,20 +203,17 @@ export async function updatePassword(req, res) {
 }
 
 export async function deleteAccount(req, res) {
-  const { password } = req.body ?? {}
-  if (typeof password !== 'string' || !password || Buffer.byteLength(password, 'utf8') > 72) {
-    return res.status(400).json({ error: 'Password wajib diisi untuk menghapus akun.' })
+  const { confirmation } = req.body ?? {}
+  if (typeof confirmation !== 'string' || confirmation.trim().toLowerCase() !== 'hapus akun') {
+    return res.status(400).json({ error: 'Ketik "hapus akun" untuk mengonfirmasi penghapusan.' })
   }
 
   const [rows] = await pool.execute(
-    'SELECT password_hash FROM users WHERE id = ? LIMIT 1',
+    'SELECT name FROM users WHERE id = ? LIMIT 1',
     [req.userId],
   )
   if (!rows[0]) return res.status(404).json({ error: 'Akun tidak ditemukan.' })
-  if (!(await bcrypt.compare(password, rows[0].password_hash))) {
-    return res.status(401).json({ error: 'Password salah. Akun tidak dihapus.' })
-  }
 
   await pool.execute('DELETE FROM users WHERE id = ?', [req.userId])
-  return res.status(204).end()
+  return res.json({ message: `Akun ${rows[0].name} berhasil terhapus.` })
 }

@@ -13,16 +13,19 @@ npm run lint     # cek kualitas kode
 
 ## Login member dan backend
 
-Frontend memiliki route publik `/`, `/login`, dan `/reset-password`, serta route
-dashboard terproteksi di `/dashboard`. Token JWT disimpan di `sessionStorage` dan sesi diverifikasi
-kembali melalui `GET /api/auth/me`. Konfigurasi Vite meneruskan `/api` ke backend
-port 3001; konfigurasi proxy tersebut dipertahankan.
+Frontend memiliki route publik `/` dan `/login`, serta route dashboard terproteksi
+di `/dashboard`. Dashboard menampilkan halaman administrasi untuk role `admin`
+dan halaman profil untuk role `user`. Token JWT disimpan di `sessionStorage` dan
+sesi diverifikasi kembali melalui `GET /api/auth/me`. Konfigurasi Vite meneruskan
+`/api` ke backend port 3001; konfigurasi proxy tersebut dipertahankan.
 
 ### Menyiapkan database dan backend
 
 1. Buat database dan tabel dari MySQL/TiDB SQL editor dengan menjalankan
    `backend/sql/setup.sql`. Pastikan database aktif di MySQL80 dan tabel `users`
-   sudah tersedia.
+   sudah tersedia. Skrip memilih database `Muda_movement`; samakan `DB_NAME` di
+   backend dengan nama tersebut, atau ubah `CREATE DATABASE`/`USE` pada skrip
+   sebelum menjalankannya jika database Anda memakai nama lain.
 2. Atur `backend/.env` sesuai database. Untuk MySQL lokal gunakan host
    `127.0.0.1`, port `3306`, `DB_SSL=false`, dan username/password MySQL Anda.
    Untuk TiDB Cloud gunakan endpoint cluster, port dan credential dari TiDB,
@@ -31,12 +34,11 @@ port 3001; konfigurasi proxy tersebut dipertahankan.
 3. Isi `JWT_SECRET` (minimal 32 karakter acak; buat dengan
    `node -e "console.log(require('node:crypto').randomBytes(64).toString('hex'))"`)
    dan `WHATSAPP_GROUP_URL` di `backend/.env`.
-   Atur juga `FRONTEND_URL` ke alamat frontend. Untuk mengaktifkan reset
-   password lewat email, isi `RESEND_API_KEY` dan `RESEND_FROM`. Buat API key
-   di Resend dan verifikasi domain pengirim; `RESEND_FROM` harus menggunakan
-   alamat dari domain yang sudah diverifikasi.
+   Sebelum setup admin awal, isi juga `ADMIN_SETUP_KEY` dengan secret acak
+   minimal 32 karakter. Kunci ini hanya digunakan di halaman setup awal dan
+   tidak disimpan di frontend. Hapus/nonaktifkan nilainya setelah admin pertama
+   berhasil dibuat.
    `CORS_ORIGIN` dapat berisi beberapa origin dipisahkan koma saat deployment.
-   Jalankan ulang `backend/sql/setup.sql` agar tabel token reset tersedia.
 4. Di terminal pertama:
 
    ```bash
@@ -54,28 +56,52 @@ port 3001; konfigurasi proxy tersebut dipertahankan.
    ```
 
    Buka `http://localhost:5173/login`, pilih **Daftar di sini**, isi nama, email,
-   dan password. Akun langsung aktif dan sesi masuk ke dashboard setelah berhasil
-   mendaftar. Coba juga buka `/dashboard` saat logout untuk memastikan halaman
-   dialihkan ke `/login`.
+   nomor telepon/WhatsApp, dan password. Akun langsung aktif dan sesi masuk ke
+   dashboard setelah berhasil mendaftar.
 
-Semua akun memiliki satu peran, `user`. API autentikasi dan pengelolaan akun:
+### Menyiapkan admin pertama
+
+1. Jalankan `backend/sql/setup.sql`, lalu atur `ADMIN_SETUP_KEY` di konfigurasi
+   backend dan jalankan backend.
+2. Buka halaman login. Saat belum ada admin, tautan **Siapkan admin pertama**
+   mengarahkan ke formulir React `/admin-setup`.
+3. Isi kunci setup dan data untuk satu admin. Akun admin dibuat melalui aplikasi
+   dan password di-hash backend; setup hanya bisa dilakukan sekali. Jika email
+   sudah terdaftar sebagai user, isi password saat ini untuk mengangkat akun itu
+   menjadi admin tanpa membuat akun duplikat.
+4. Login sebagai admin. Dari dashboard, tambahkan admin kedua dan set perannya
+   menjadi admin. Dashboard juga dapat mencari, mengedit, dan menghapus akun.
+
+API mencegah penghapusan atau penurunan peran jika jumlah admin tinggal dua.
+Status setup awal disimpan dalam tabel `admin_setup_state` dan dikunci di dalam
+transaksi backend. Tidak perlu mengedit atau menjalankan SQL `UPDATE` untuk
+mengangkat akun menjadi admin. Akun terbaru tampil lebih dahulu. Untuk akun lama
+yang belum memiliki nomor, isi nomor dari dashboard atau melalui edit akun admin
+sebelum dipakai untuk pemulihan password.
+
+API autentikasi dan pengelolaan akun:
 
 - `POST /api/auth/register` mendaftarkan akun dan langsung mengembalikan JWT. 
-- `POST /api/auth/login` masuk dengan email dan password.
-- `POST /api/auth/password-reset/request` meminta tautan reset lewat email; respons
-  tidak mengungkap apakah email terdaftar dan dibatasi lima permintaan per 15 menit.
-- `POST /api/auth/password-reset/confirm` mengatur password baru menggunakan token
-  sekali pakai yang kedaluwarsa setelah 30 menit.
+- `POST /api/auth/login` masuk dengan email, password, dan pilihan `expectedRole`
+  (`user` atau `admin`); backend mencocokkan peran dengan data akun.
 - `GET /api/auth/me` membaca profil menggunakan token sesi yang valid.
-- `PATCH /api/auth/me` mengubah nama dan email milik akun yang sedang masuk.
+- `PATCH /api/auth/me` mengubah nama, email, dan nomor telepon milik akun yang sedang masuk.
 - `PATCH /api/auth/me/password` mengganti password setelah memverifikasi password lama.
-- `DELETE /api/auth/me` menghapus akun sendiri setelah konfirmasi password.
+- `DELETE /api/auth/me` menghapus akun sendiri setelah mengetik `hapus akun`.
+- `GET /api/admin/setup/status` memeriksa apakah setup awal tersedia.
+- `POST /api/admin/setup` membuat atau mengangkat satu akun admin pertama menggunakan kunci setup.
+- `GET /api/admin/users?search=...` mencari akun (admin).
+- `POST /api/admin/users` membuat akun (admin).
+- `PATCH /api/admin/users/:id` mengubah data dan peran akun (admin).
+- `DELETE /api/admin/users/:id` menghapus akun (admin).
 
 `GET /api/config` mengirimkan URL grup WhatsApp dari konfigurasi backend tanpa
 menanam tautan grup ke banyak file frontend. Respons autentikasi hanya memuat
-nama, email, peran `user`, dan tanggal bergabung—tidak pernah `password_hash`.
-Di dashboard, permintaan reset password dikirim ke email akun sehingga tidak
-meminta password lama; pastikan email tersebut dapat diakses.
+nama, email, nomor telepon, peran, dan tanggal bergabung—tidak pernah
+`password_hash`. Lupa password membuka email yang sudah berisi email dan nomor
+akun ke `mudamovement.id@gmail.com`; pada halaman login pengguna perlu mengisi
+email dan nomor akun, sedangkan pada dashboard keduanya diisi otomatis. Email
+dikirim oleh aplikasi email pengguna setelah pengguna menekan kirim.
 
 ### Deployment (Vercel + backend Node + TiDB Cloud)
 
@@ -88,16 +114,17 @@ serverless functions.
 Sebelum deploy:
 
 1. Siapkan cluster dan database di TiDB Cloud, lalu jalankan
-   `backend/sql/setup.sql` di database tersebut. Pastikan tabel `users` dan
-   `password_reset_tokens` sudah ada.
+   `backend/sql/setup.sql` di database tersebut. Buat admin pertama melalui
+   halaman setup React, lalu tambahkan admin kedua dari dashboard.
 2. Di Render, buat **Web Service** dari repository yang sama dengan root
    directory `backend`, build command `npm install`, dan start command
    `npm start`. Service harus menerima port dari `PORT` yang disediakan Render.
 3. Tambahkan environment variables backend di dashboard hosting:
    `NODE_ENV=production`, `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`,
    `DB_NAME`, `DB_SSL=true`, `JWT_SECRET` (acak, minimal 32 karakter),
-   `CORS_ORIGIN` (origin Vercel frontend), `FRONTEND_URL` (alamat frontend
-   Vercel), `WHATSAPP_GROUP_URL`, `RESEND_API_KEY`, dan `RESEND_FROM`.
+   `CORS_ORIGIN` (origin Vercel frontend), dan `WHATSAPP_GROUP_URL`. Isi
+   `ADMIN_SETUP_KEY` sementara untuk membuat admin awal melalui halaman React,
+   lalu hapus/nonaktifkan setelah setup selesai.
    Simpan rahasia hanya di dashboard hosting; jangan taruh rahasia di frontend,
    Vercel, atau repository.
 4. Atur izin jaringan TiDB agar menerima koneksi dari backend hosting. Jika
@@ -112,9 +139,9 @@ Sebelum deploy:
    deploy. Rewrite Vercel untuk route SPA sudah disediakan di `vercel.json`;
    selama development lokal variabel ini boleh kosong karena proxy Vite tetap
    digunakan.
-7. Tes daftar akun, login, refresh halaman `/dashboard`, ubah profil, serta alur
-   reset password dan tautan email. Pastikan `FRONTEND_URL` menunjuk domain
-   frontend produksi agar tautan reset kembali ke situs yang benar.
+7. Tes daftar akun, login user/admin, refresh halaman `/dashboard`, CRUD akun,
+   pencarian, perlindungan minimum dua admin, perubahan profil, email lupa
+   password, dan konfirmasi penghapusan akun.
 
 Backend tidak boleh menerima `CORS_ORIGIN=http://localhost:5173` saja di
 production. Isi dengan origin persis frontend Vercel (tanpa path), dan tambahkan
