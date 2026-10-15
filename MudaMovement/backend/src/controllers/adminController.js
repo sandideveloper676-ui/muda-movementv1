@@ -48,7 +48,7 @@ export async function getSetupStatus(_req, res) {
   })
 }
 
-export async function setupInitialAdmins(req, res) {
+export async function setupInitialAdmin(req, res) {
   const configuredKey = process.env.ADMIN_SETUP_KEY
   const providedKey = req.body?.setupKey
   if (!configuredKey || configuredKey.length < 32 || typeof providedKey !== 'string') {
@@ -60,24 +60,16 @@ export async function setupInitialAdmins(req, res) {
     return res.status(401).json({ error: 'Kunci setup tidak valid.' })
   }
 
-  const admins = req.body?.admins
-  if (!Array.isArray(admins) || admins.length !== 2) {
-    return res.status(400).json({ error: 'Isi data untuk tepat dua admin awal.' })
+  const admin = req.body?.admin
+  if (!validAccount(admin || {})) {
+    return res.status(400).json({ error: 'Nama, email, atau nomor telepon/WhatsApp admin tidak valid.' })
   }
-  for (const admin of admins) {
-    if (!validAccount(admin)) {
-      return res.status(400).json({ error: 'Nama, email, atau nomor telepon/WhatsApp admin tidak valid.' })
-    }
-    if (
-      typeof admin.password !== 'string'
-      || admin.password.length < 8
-      || Buffer.byteLength(admin.password, 'utf8') > 72
-    ) {
-      return res.status(400).json({ error: 'Password admin harus minimal 8 karakter dan maksimal 72 byte.' })
-    }
-  }
-  if (normalizeEmail(admins[0].email) === normalizeEmail(admins[1].email)) {
-    return res.status(400).json({ error: 'Kedua admin harus menggunakan email yang berbeda.' })
+  if (
+    typeof admin.password !== 'string'
+    || admin.password.length < 8
+    || Buffer.byteLength(admin.password, 'utf8') > 72
+  ) {
+    return res.status(400).json({ error: 'Password admin harus minimal 8 karakter dan maksimal 72 byte.' })
   }
 
   const connection = await pool.getConnection()
@@ -94,37 +86,35 @@ export async function setupInitialAdmins(req, res) {
       return res.status(409).json({ error: 'Setup admin awal sudah pernah dilakukan atau tidak lagi tersedia.' })
     }
 
-    for (const admin of admins) {
-      const normalizedEmail = normalizeEmail(admin.email)
-      const [existingRows] = await connection.execute(
-        'SELECT id, password_hash FROM users WHERE email = ? FOR UPDATE',
-        [normalizedEmail],
-      )
-      if (existingRows[0]) {
-        const passwordMatches = await bcrypt.compare(admin.password, existingRows[0].password_hash)
-        if (!passwordMatches) {
-          await connection.rollback()
-          return res.status(401).json({
-            error: `Password akun ${normalizedEmail} tidak cocok. Masukkan password yang saat ini digunakan akun tersebut.`,
-          })
-        }
-        await connection.execute(
-          "UPDATE users SET role = 'admin', session_version = session_version + 1 WHERE id = ?",
-          [existingRows[0].id],
-        )
-      } else {
-        const passwordHash = await bcrypt.hash(admin.password, 12)
-        await connection.execute(
-          `INSERT INTO users (name, email, phone, password_hash, role)
-           VALUES (?, ?, ?, ?, 'admin')`,
-          [
-            admin.name.trim(),
-            normalizedEmail,
-            normalizePhone(admin.phone),
-            passwordHash,
-          ],
-        )
+    const normalizedEmail = normalizeEmail(admin.email)
+    const [existingRows] = await connection.execute(
+      'SELECT id, password_hash FROM users WHERE email = ? FOR UPDATE',
+      [normalizedEmail],
+    )
+    if (existingRows[0]) {
+      const passwordMatches = await bcrypt.compare(admin.password, existingRows[0].password_hash)
+      if (!passwordMatches) {
+        await connection.rollback()
+        return res.status(401).json({
+          error: `Password akun ${normalizedEmail} tidak cocok. Masukkan password yang saat ini digunakan akun tersebut.`,
+        })
       }
+      await connection.execute(
+        "UPDATE users SET role = 'admin', session_version = session_version + 1 WHERE id = ?",
+        [existingRows[0].id],
+      )
+    } else {
+      const passwordHash = await bcrypt.hash(admin.password, 12)
+      await connection.execute(
+        `INSERT INTO users (name, email, phone, password_hash, role)
+         VALUES (?, ?, ?, ?, 'admin')`,
+        [
+          admin.name.trim(),
+          normalizedEmail,
+          normalizePhone(admin.phone),
+          passwordHash,
+        ],
+      )
     }
     await connection.execute(
       'UPDATE admin_setup_state SET setup_complete = TRUE WHERE id = 1',
@@ -139,7 +129,7 @@ export async function setupInitialAdmins(req, res) {
   }
 
   return res.status(201).json({
-    message: 'Dua akun admin awal berhasil dibuat. Silakan masuk melalui halaman login.',
+    message: 'Akun admin awal berhasil dibuat. Silakan login sebagai admin, lalu tambahkan admin kedua dari dashboard.',
   })
 }
 

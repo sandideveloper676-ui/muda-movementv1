@@ -4,7 +4,7 @@ import {
   deleteUser,
   getSetupStatus,
   listUsers,
-  setupInitialAdmins,
+  setupInitialAdmin,
   updateUser,
 } from '../controllers/adminController.js'
 import authMiddleware from '../middleware/authMiddleware.js'
@@ -21,7 +21,7 @@ const setupLimiter = rateLimit({
 })
 
 router.get('/setup/status', getSetupStatus)
-router.post('/setup', setupLimiter, setupInitialAdmins)
+router.post('/setup', setupLimiter, setupInitialAdmin)
 router.use(authMiddleware, adminMiddleware)
 router.get('/users', listUsers)
 router.post('/users', createUser)

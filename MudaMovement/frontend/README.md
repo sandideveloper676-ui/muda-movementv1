@@ -36,7 +36,7 @@ sesi diverifikasi kembali melalui `GET /api/auth/me`. Konfigurasi Vite meneruska
    dan `WHATSAPP_GROUP_URL` di `backend/.env`.
    Sebelum setup admin awal, isi juga `ADMIN_SETUP_KEY` dengan secret acak
    minimal 32 karakter. Kunci ini hanya digunakan di halaman setup awal dan
-   tidak disimpan di frontend. Hapus/nonaktifkan nilainya setelah dua admin
+   tidak disimpan di frontend. Hapus/nonaktifkan nilainya setelah admin pertama
    berhasil dibuat.
    `CORS_ORIGIN` dapat berisi beberapa origin dipisahkan koma saat deployment.
 4. Di terminal pertama:
@@ -59,19 +59,18 @@ sesi diverifikasi kembali melalui `GET /api/auth/me`. Konfigurasi Vite meneruska
    nomor telepon/WhatsApp, dan password. Akun langsung aktif dan sesi masuk ke
    dashboard setelah berhasil mendaftar.
 
-### Menyiapkan dua admin pertama
+### Menyiapkan admin pertama
 
 1. Jalankan `backend/sql/setup.sql`, lalu atur `ADMIN_SETUP_KEY` di konfigurasi
    backend dan jalankan backend.
-2. Buka halaman login. Saat belum ada admin, tautan **Siapkan dua admin**
+2. Buka halaman login. Saat belum ada admin, tautan **Siapkan admin pertama**
    mengarahkan ke formulir React `/admin-setup`.
-3. Isi kunci setup dan data untuk dua admin. Akun admin dibuat melalui aplikasi
+3. Isi kunci setup dan data untuk satu admin. Akun admin dibuat melalui aplikasi
    dan password di-hash backend; setup hanya bisa dilakukan sekali. Jika email
    sudah terdaftar sebagai user, isi password saat ini untuk mengangkat akun itu
    menjadi admin tanpa membuat akun duplikat.
-4. Masuk dengan salah satu akun admin. Dashboard dapat mencari berdasarkan nama,
-   email, atau nomor telepon; menambah, mengedit, dan menghapus akun; serta
-   mengubah peran user/admin.
+4. Login sebagai admin. Dari dashboard, tambahkan admin kedua dan set perannya
+   menjadi admin. Dashboard juga dapat mencari, mengedit, dan menghapus akun.
 
 API mencegah penghapusan atau penurunan peran jika jumlah admin tinggal dua.
 Status setup awal disimpan dalam tabel `admin_setup_state` dan dikunci di dalam
@@ -90,7 +89,7 @@ API autentikasi dan pengelolaan akun:
 - `PATCH /api/auth/me/password` mengganti password setelah memverifikasi password lama.
 - `DELETE /api/auth/me` menghapus akun sendiri setelah mengetik `hapus akun`.
 - `GET /api/admin/setup/status` memeriksa apakah setup awal tersedia.
-- `POST /api/admin/setup` membuat tepat dua admin pertama menggunakan kunci setup.
+- `POST /api/admin/setup` membuat atau mengangkat satu akun admin pertama menggunakan kunci setup.
 - `GET /api/admin/users?search=...` mencari akun (admin).
 - `POST /api/admin/users` membuat akun (admin).
 - `PATCH /api/admin/users/:id` mengubah data dan peran akun (admin).
@@ -115,8 +114,8 @@ serverless functions.
 Sebelum deploy:
 
 1. Siapkan cluster dan database di TiDB Cloud, lalu jalankan
-   `backend/sql/setup.sql` di database tersebut. Buat dua admin awal melalui
-   halaman setup React seperti langkah di atas.
+   `backend/sql/setup.sql` di database tersebut. Buat admin pertama melalui
+   halaman setup React, lalu tambahkan admin kedua dari dashboard.
 2. Di Render, buat **Web Service** dari repository yang sama dengan root
    directory `backend`, build command `npm install`, dan start command
    `npm start`. Service harus menerima port dari `PORT` yang disediakan Render.

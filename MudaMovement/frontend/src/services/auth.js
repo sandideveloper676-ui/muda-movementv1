@@ -122,10 +122,10 @@ export function fetchAdminSetupStatus() {
   return request('/api/admin/setup/status')
 }
 
-export function setupInitialAdmins(setupKey, admins) {
+export function setupInitialAdmin(setupKey, admin) {
   return request('/api/admin/setup', {
     method: 'POST',
-    body: JSON.stringify({ setupKey, admins }),
+    body: JSON.stringify({ setupKey, admin }),
   })
 }
 

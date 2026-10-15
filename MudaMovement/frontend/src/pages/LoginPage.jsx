@@ -277,8 +277,8 @@ export default function LoginPage() {
           </p>
           {adminSetupAvailable && (
             <p className="login-help">
-              Pertama kali menggunakan dashboard admin?{' '}
-              <Link className="login-mode-toggle" to="/admin-setup">Siapkan dua admin</Link>
+              Pertama kali menyiapkan admin?{' '}
+              <Link className="login-mode-toggle" to="/admin-setup">Siapkan admin pertama</Link>
             </p>
           )}
         </div>
