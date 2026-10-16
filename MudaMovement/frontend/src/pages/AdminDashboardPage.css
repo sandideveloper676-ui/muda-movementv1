@@ -26,6 +26,7 @@
 }
 
 .admin-card h2 { font-size: 1.45rem; }
+.admin-editor { scroll-margin-top: 5.25rem; }
 .admin-account-details {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));

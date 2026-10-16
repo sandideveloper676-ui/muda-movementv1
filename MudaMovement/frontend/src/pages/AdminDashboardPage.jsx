@@ -83,7 +83,7 @@ export default function AdminDashboardPage() {
     })
     setFormError('')
     setMessage('')
-    window.scrollTo({ top: 0, behavior: 'smooth' })
+    document.getElementById('admin-editor')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
   }
 
   function resetForm() {
@@ -298,7 +298,7 @@ export default function AdminDashboardPage() {
             </form>
           </section>
 
-          <section className="admin-card admin-editor" aria-labelledby="admin-editor-title">
+          <section className="admin-card admin-editor" id="admin-editor" aria-labelledby="admin-editor-title">
             <div>
               <p className="member-eyebrow">{editingId ? 'Perbarui informasi' : 'Akun baru'}</p>
               <h2 id="admin-editor-title">{editingId ? 'Edit akun' : 'Tambah akun'}</h2>
