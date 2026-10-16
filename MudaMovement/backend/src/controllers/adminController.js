@@ -1,6 +1,7 @@
 import bcrypt from 'bcrypt'
 import { timingSafeEqual } from 'node:crypto'
 import pool from '../config/database.js'
+import { isValidWhatsAppGroupUrl } from '../utils/appSettings.js'
 import {
   isValidEmail,
   isValidPhone,
@@ -266,4 +267,60 @@ export async function deleteUser(req, res) {
   } finally {
     connection.release()
   }
+}
+
+export async function getSettings(_req, res) {
+  const [rows] = await pool.execute(
+    'SELECT setting_value FROM app_settings WHERE setting_key = ? LIMIT 1',
+    ['whatsapp_group_url'],
+  )
+  const whatsappGroupUrl = rows[0]
+    ? rows[0].setting_value
+    : process.env.WHATSAPP_GROUP_URL?.trim() || ''
+  return res.json({ whatsappGroupUrl })
+}
+
+export async function updateWhatsAppGroup(req, res) {
+  const { whatsappGroupUrl } = req.body ?? {}
+  if (
+    typeof whatsappGroupUrl !== 'string'
+    || whatsappGroupUrl.length > 2048
+    || (whatsappGroupUrl.trim() && !isValidWhatsAppGroupUrl(whatsappGroupUrl.trim()))
+  ) {
+    return res.status(400).json({
+      error: 'Masukkan link grup WhatsApp HTTPS yang valid dari chat.whatsapp.com, atau kosongkan untuk menonaktifkannya.',
+    })
+  }
+
+  const value = whatsappGroupUrl.trim()
+  await pool.execute(
+    `INSERT INTO app_settings (setting_key, setting_value)
+     VALUES (?, ?)
+     ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)`,
+    ['whatsapp_group_url', value],
+  )
+  return res.json({ whatsappGroupUrl: value })
+}
+
+export async function updateOwnAdminPassword(req, res) {
+  const { newPassword, confirmation } = req.body ?? {}
+  if (typeof confirmation !== 'string' || confirmation.trim().toLowerCase() !== 'ubah password') {
+    return res.status(400).json({ error: 'Ketik "ubah password" untuk mengonfirmasi perubahan password.' })
+  }
+  if (
+    typeof newPassword !== 'string'
+    || newPassword.length < 8
+    || Buffer.byteLength(newPassword, 'utf8') > 72
+  ) {
+    return res.status(400).json({ error: 'Password baru harus minimal 8 karakter dan maksimal 72 byte.' })
+  }
+
+  const passwordHash = await bcrypt.hash(newPassword, 12)
+  const [result] = await pool.execute(
+    'UPDATE users SET password_hash = ?, session_version = session_version + 1 WHERE id = ? AND role = ?',
+    [passwordHash, req.userId, 'admin'],
+  )
+  if (result.affectedRows === 0) return res.status(404).json({ error: 'Akun admin tidak ditemukan.' })
+
+  return res.json({ message: 'Password admin berhasil diperbarui. Silakan masuk kembali.' })
 }

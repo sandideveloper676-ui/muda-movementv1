@@ -1,4 +1,5 @@
 import { hero } from '../../data/content'
+import useAuth from '../../auth/useAuth'
 import Button from '../ui/Button'
 import './Hero.css'
 import Picture from '../../../Assets/People.png'
@@ -26,6 +27,8 @@ function HeroVisual() {
 }
 
 export default function Hero() {
+  const { user, loading } = useAuth()
+
   return (
     <section id="home" className="hero" aria-labelledby="hero-title">
       {/* Dekorasi latar */}
@@ -58,6 +61,9 @@ export default function Hero() {
           <div className="hero__actions">
             <Button href={hero.primaryCta.href} icon="arrow-right">{hero.primaryCta.label}</Button>
             <Button href={hero.secondaryCta.href} variant="secondary" icon="sparkles">{hero.secondaryCta.label}</Button>
+            {!loading && !user && (
+              <Button href="/login" variant="secondary" icon="users">Gabung komunitas</Button>
+            )}
           </div>
         </div>
 

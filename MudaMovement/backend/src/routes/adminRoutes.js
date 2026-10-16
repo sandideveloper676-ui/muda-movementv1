@@ -3,8 +3,11 @@ import {
   createUser,
   deleteUser,
   getSetupStatus,
+  getSettings,
   listUsers,
   setupInitialAdmin,
+  updateOwnAdminPassword,
+  updateWhatsAppGroup,
   updateUser,
 } from '../controllers/adminController.js'
 import authMiddleware from '../middleware/authMiddleware.js'
@@ -23,6 +26,9 @@ const setupLimiter = rateLimit({
 router.get('/setup/status', getSetupStatus)
 router.post('/setup', setupLimiter, setupInitialAdmin)
 router.use(authMiddleware, adminMiddleware)
+router.get('/settings', getSettings)
+router.patch('/settings/whatsapp', updateWhatsAppGroup)
+router.patch('/me/password', updateOwnAdminPassword)
 router.get('/users', listUsers)
 router.post('/users', createUser)
 router.patch('/users/:id', updateUser)

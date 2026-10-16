@@ -25,7 +25,9 @@ sesi diverifikasi kembali melalui `GET /api/auth/me`. Konfigurasi Vite meneruska
    `backend/sql/setup.sql`. Pastikan database aktif di MySQL80 dan tabel `users`
    sudah tersedia. Skrip memilih database `Muda_movement`; samakan `DB_NAME` di
    backend dengan nama tersebut, atau ubah `CREATE DATABASE`/`USE` pada skrip
-   sebelum menjalankannya jika database Anda memakai nama lain.
+   sebelum menjalankannya jika database Anda memakai nama lain. Untuk database
+   yang sudah berjalan, jalankan `backend/sql/migrate_admin_settings.sql` agar
+   pengaturan link grup WhatsApp dapat disimpan.
 2. Atur `backend/.env` sesuai database. Untuk MySQL lokal gunakan host
    `127.0.0.1`, port `3306`, `DB_SSL=false`, dan username/password MySQL Anda.
    Untuk TiDB Cloud gunakan endpoint cluster, port dan credential dari TiDB,
@@ -33,7 +35,8 @@ sesi diverifikasi kembali melalui `GET /api/auth/me`. Konfigurasi Vite meneruska
    Jangan memakai port SQL editor atau port TiDB untuk MySQL lokal.
 3. Isi `JWT_SECRET` (minimal 32 karakter acak; buat dengan
    `node -e "console.log(require('node:crypto').randomBytes(64).toString('hex'))"`)
-   dan `WHATSAPP_GROUP_URL` di `backend/.env`.
+   di `backend/.env`. `WHATSAPP_GROUP_URL` dapat tetap dipakai sebagai nilai awal
+   sampai admin menyimpan pengaturan dari dashboard.
    Sebelum setup admin awal, isi juga `ADMIN_SETUP_KEY` dengan secret acak
    minimal 32 karakter. Kunci ini hanya digunakan di halaman setup awal dan
    tidak disimpan di frontend. Hapus/nonaktifkan nilainya setelah admin pertama
@@ -88,6 +91,10 @@ API autentikasi dan pengelolaan akun:
 - `PATCH /api/auth/me` mengubah nama, email, dan nomor telepon milik akun yang sedang masuk.
 - `PATCH /api/auth/me/password` mengganti password setelah memverifikasi password lama.
 - `DELETE /api/auth/me` menghapus akun sendiri setelah mengetik `hapus akun`.
+- `GET /api/admin/settings` membaca pengaturan admin.
+- `PATCH /api/admin/settings/whatsapp` menyimpan link grup WhatsApp (admin).
+- `PATCH /api/admin/me/password` mengganti password admin setelah mengetik
+  `ubah password`; semua sesi admin dicabut dan admin perlu login kembali.
 - `GET /api/admin/setup/status` memeriksa apakah setup awal tersedia.
 - `POST /api/admin/setup` membuat atau mengangkat satu akun admin pertama menggunakan kunci setup.
 - `GET /api/admin/users?search=...` mencari akun (admin).
@@ -95,8 +102,10 @@ API autentikasi dan pengelolaan akun:
 - `PATCH /api/admin/users/:id` mengubah data dan peran akun (admin).
 - `DELETE /api/admin/users/:id` menghapus akun (admin).
 
-`GET /api/config` mengirimkan URL grup WhatsApp dari konfigurasi backend tanpa
-menanam tautan grup ke banyak file frontend. Respons autentikasi hanya memuat
+`GET /api/config` mengirimkan URL grup WhatsApp yang disimpan admin; jika admin
+belum pernah menyimpan pengaturan, backend menggunakan `WHATSAPP_GROUP_URL`
+sebagai nilai awal. Admin dapat mengosongkan link untuk menyembunyikan tombol
+join di dashboard user. Respons autentikasi hanya memuat
 nama, email, nomor telepon, peran, dan tanggal bergabung—tidak pernah
 `password_hash`. Lupa password membuka email yang sudah berisi email dan nomor
 akun ke `mudamovement.id@gmail.com`; pada halaman login pengguna perlu mengisi
@@ -122,9 +131,10 @@ Sebelum deploy:
 3. Tambahkan environment variables backend di dashboard hosting:
    `NODE_ENV=production`, `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`,
    `DB_NAME`, `DB_SSL=true`, `JWT_SECRET` (acak, minimal 32 karakter),
-   `CORS_ORIGIN` (origin Vercel frontend), dan `WHATSAPP_GROUP_URL`. Isi
-   `ADMIN_SETUP_KEY` sementara untuk membuat admin awal melalui halaman React,
-   lalu hapus/nonaktifkan setelah setup selesai.
+   serta `CORS_ORIGIN` (origin Vercel frontend). `WHATSAPP_GROUP_URL` bersifat
+   opsional sebagai nilai awal; admin dapat mengatur link grup dari dashboard.
+   Isi `ADMIN_SETUP_KEY` sementara untuk membuat admin awal melalui halaman
+   React, lalu hapus/nonaktifkan setelah setup selesai.
    Simpan rahasia hanya di dashboard hosting; jangan taruh rahasia di frontend,
    Vercel, atau repository.
 4. Atur izin jaringan TiDB agar menerima koneksi dari backend hosting. Jika
@@ -141,7 +151,8 @@ Sebelum deploy:
    digunakan.
 7. Tes daftar akun, login user/admin, refresh halaman `/dashboard`, CRUD akun,
    pencarian, perlindungan minimum dua admin, perubahan profil, email lupa
-   password, dan konfirmasi penghapusan akun.
+   password, konfirmasi penghapusan akun, penggantian password admin, dan
+   perubahan link grup WhatsApp dari dashboard admin ke dashboard user.
 
 Backend tidak boleh menerima `CORS_ORIGIN=http://localhost:5173` saja di
 production. Isi dengan origin persis frontend Vercel (tanpa path), dan tambahkan

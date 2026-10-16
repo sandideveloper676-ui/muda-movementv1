@@ -1,5 +1,6 @@
 import cors from 'cors'
 import express from 'express'
+import pool from './config/database.js'
 import adminRoutes from './routes/adminRoutes.js'
 import authRoutes from './routes/authRoutes.js'
 
@@ -30,8 +31,15 @@ app.get('/healthz', (_req, res) => {
   res.json({ status: 'ok' })
 })
 
-app.get('/api/config', (_req, res) => {
-  res.json({ whatsappGroupUrl: process.env.WHATSAPP_GROUP_URL?.trim() || null })
+app.get('/api/config', async (_req, res) => {
+  const [rows] = await pool.execute(
+    'SELECT setting_value FROM app_settings WHERE setting_key = ? LIMIT 1',
+    ['whatsapp_group_url'],
+  )
+  const whatsappGroupUrl = rows[0]
+    ? rows[0].setting_value || null
+    : process.env.WHATSAPP_GROUP_URL?.trim() || null
+  res.json({ whatsappGroupUrl })
 })
 
 app.use('/api/auth', authRoutes)

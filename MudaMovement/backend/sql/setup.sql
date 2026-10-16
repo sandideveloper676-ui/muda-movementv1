@@ -101,6 +101,13 @@ CREATE TABLE IF NOT EXISTS admin_setup_state (
 
 INSERT IGNORE INTO admin_setup_state (id, setup_complete) VALUES (1, FALSE);
 
+CREATE TABLE IF NOT EXISTS app_settings (
+  setting_key VARCHAR(64) NOT NULL,
+  setting_value TEXT NOT NULL,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (setting_key)
+);
+
 -- Tabel token reset password tidak lagi digunakan karena pemulihan password dilakukan
 -- melalui email ke admin. Jika tabel lama masih ada, penghapusannya opsional:
 -- DROP TABLE IF EXISTS password_reset_tokens;

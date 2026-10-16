@@ -137,6 +137,28 @@ export function deleteAdminUser(token, id) {
   })
 }
 
+export function fetchAdminSettings(token) {
+  return request('/api/admin/settings', {
+    headers: { Authorization: `Bearer ${token}` },
+  })
+}
+
+export function updateAdminWhatsAppGroup(token, whatsappGroupUrl) {
+  return request('/api/admin/settings/whatsapp', {
+    method: 'PATCH',
+    headers: { Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ whatsappGroupUrl }),
+  })
+}
+
+export function updateAdminPassword(token, newPassword, confirmation) {
+  return request('/api/admin/me/password', {
+    method: 'PATCH',
+    headers: { Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ newPassword, confirmation }),
+  })
+}
+
 export function fetchAdminSetupStatus() {
   return request('/api/admin/setup/status')
 }

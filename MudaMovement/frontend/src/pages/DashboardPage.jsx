@@ -35,7 +35,7 @@ function MemberDashboardPage() {
     let active = true
     fetchPublicConfig()
       .then((config) => {
-        if (active) setWhatsappUrl(config.whatsappGroupUrl || 'https://chat.whatsapp.com/LVdBfFZW3l24FqJSHHOtzb')
+        if (active) setWhatsappUrl(config.whatsappGroupUrl || '')
       })
       .catch((error) => {
         if (active) setConfigError(error.message)

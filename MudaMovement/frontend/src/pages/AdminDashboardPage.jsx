@@ -5,8 +5,11 @@ import ThemeToggle from '../components/layout/ThemeToggle'
 import {
   createAdminUser,
   deleteAdminUser,
+  fetchAdminSettings,
   fetchAdminUsers,
+  updateAdminPassword,
   updateAdminUser,
+  updateAdminWhatsAppGroup,
 } from '../services/auth'
 import './AdminDashboardPage.css'
 import './DashboardPage.css'
@@ -20,7 +23,7 @@ const emptyForm = {
 }
 
 export default function AdminDashboardPage() {
-  const { user, token, logout } = useAuth()
+  const { user, token, logout, setCurrentUser } = useAuth()
   const [users, setUsers] = useState(null)
   const [search, setSearch] = useState('')
   const [refresh, setRefresh] = useState(0)
@@ -30,6 +33,26 @@ export default function AdminDashboardPage() {
   const [form, setForm] = useState(emptyForm)
   const [editingId, setEditingId] = useState('')
   const [saving, setSaving] = useState(false)
+  const [whatsappUrl, setWhatsappUrl] = useState('')
+  const [settingsError, setSettingsError] = useState('')
+  const [settingsMessage, setSettingsMessage] = useState('')
+  const [savingSettings, setSavingSettings] = useState(false)
+  const [newPassword, setNewPassword] = useState('')
+  const [passwordConfirmation, setPasswordConfirmation] = useState('')
+  const [passwordError, setPasswordError] = useState('')
+  const [savingPassword, setSavingPassword] = useState(false)
+
+  useEffect(() => {
+    let active = true
+    fetchAdminSettings(token)
+      .then(({ whatsappGroupUrl: savedUrl }) => {
+        if (active) setWhatsappUrl(savedUrl || '')
+      })
+      .catch((error) => {
+        if (active) setSettingsError(error.message)
+      })
+    return () => { active = false }
+  }, [token])
 
   useEffect(() => {
     let active = true
@@ -82,7 +105,8 @@ export default function AdminDashboardPage() {
           phone: form.phone,
           role: form.role,
         }
-        await updateAdminUser(token, editingId, account)
+        const result = await updateAdminUser(token, editingId, account)
+        if (editingId === user.id) setCurrentUser(result.user)
         setMessage('Perubahan akun berhasil disimpan.')
         if (editingId === user.id && account.role !== 'admin') {
           logout()
@@ -121,8 +145,44 @@ export default function AdminDashboardPage() {
     }
   }
 
+  async function handleWhatsAppSubmit(event) {
+    event.preventDefault()
+    setSavingSettings(true)
+    setSettingsError('')
+    setSettingsMessage('')
+    try {
+      const result = await updateAdminWhatsAppGroup(token, whatsappUrl)
+      setWhatsappUrl(result.whatsappGroupUrl)
+      setSettingsMessage(result.whatsappGroupUrl
+        ? 'Link grup WhatsApp berhasil diperbarui.'
+        : 'Link grup WhatsApp dinonaktifkan dari dashboard user.')
+    } catch (error) {
+      setSettingsError(error.message)
+    } finally {
+      setSavingSettings(false)
+    }
+  }
+
+  async function handlePasswordSubmit(event) {
+    event.preventDefault()
+    setSavingPassword(true)
+    setPasswordError('')
+    try {
+      const result = await updateAdminPassword(token, newPassword, passwordConfirmation)
+      window.alert(result.message)
+      logout()
+      window.location.replace('/login')
+    } catch (error) {
+      setPasswordError(error.message)
+      setSavingPassword(false)
+    }
+  }
+
   const accountList = users || []
   const adminCount = accountList.filter((account) => account.role === 'admin').length
+  const joinedAt = user.createdAt
+    ? new Intl.DateTimeFormat('id-ID', { dateStyle: 'medium' }).format(new Date(user.createdAt))
+    : '—'
 
   return (
     <main className="member-dashboard">
@@ -133,6 +193,8 @@ export default function AdminDashboardPage() {
         </Link>
         <div className="member-menu">
           <p className="member-menu__label">Administrasi</p>
+          <a className="member-menu__item" href="#account">◉ <span>Info akun</span></a>
+          <a className="member-menu__item" href="#whatsapp">↗ <span>Grup WhatsApp</span></a>
           <a className="member-menu__item is-active" href="#users">◉ <span>Kelola akun</span></a>
           <p className="member-menu__label member-menu__label--home">Beranda</p>
           <Link className="member-menu__item" to="/">↗ <span>Landing Page</span></Link>
@@ -163,6 +225,78 @@ export default function AdminDashboardPage() {
             <strong>{accountList.length}</strong><span>{search ? 'akun ditemukan' : 'akun terdaftar'}</span>
             <strong>{adminCount}</strong><span>admin{search ? ' ditemukan' : ' aktif'}</span>
           </div>
+
+          <section className="admin-card" id="account" aria-labelledby="admin-account-title">
+            <p className="member-eyebrow">Akun yang sedang digunakan</p>
+            <h2 id="admin-account-title">Info akun admin</h2>
+            <dl className="admin-account-details">
+              <div><dt>Nama lengkap</dt><dd>{user.name}</dd></div>
+              <div><dt>Email</dt><dd>{user.email}</dd></div>
+              <div><dt>Telepon/WhatsApp</dt><dd>{user.phone || '—'}</dd></div>
+              <div><dt>Admin sejak</dt><dd>{joinedAt}</dd></div>
+            </dl>
+            <div className="admin-password-section">
+              <p className="member-eyebrow">Keamanan akun</p>
+              <h3>Ubah password</h3>
+              <p className="admin-admin-note">
+                Setelah password diperbarui, Anda akan keluar dan perlu masuk kembali menggunakan password baru.
+              </p>
+              <form className="admin-form" onSubmit={handlePasswordSubmit}>
+                <label htmlFor="admin-new-password">Password baru</label>
+                <input
+                  id="admin-new-password"
+                  type="password"
+                  autoComplete="new-password"
+                  value={newPassword}
+                  onChange={(event) => setNewPassword(event.target.value)}
+                  minLength={8}
+                  maxLength={72}
+                  required
+                />
+                <label htmlFor="admin-password-confirmation">Ketik “ubah password” untuk mengonfirmasi</label>
+                <input
+                  id="admin-password-confirmation"
+                  type="text"
+                  autoComplete="off"
+                  value={passwordConfirmation}
+                  onChange={(event) => setPasswordConfirmation(event.target.value)}
+                  required
+                />
+                {passwordError && <p className="member-form-message is-error" role="alert">{passwordError}</p>}
+                <button className="member-action-button" type="submit" disabled={savingPassword}>
+                  {savingPassword ? 'Memperbarui...' : 'Ubah password'}
+                </button>
+              </form>
+            </div>
+          </section>
+
+          <section className="admin-card" id="whatsapp" aria-labelledby="admin-whatsapp-title">
+            <p className="member-eyebrow">Komunitas MUDA Movement</p>
+            <h2 id="admin-whatsapp-title">Link grup WhatsApp</h2>
+            <p className="admin-admin-note">
+              Link ini ditampilkan sebagai tombol gabung grup di dashboard user. Kosongkan untuk menyembunyikan tombol tersebut.
+            </p>
+            <form className="admin-form" onSubmit={handleWhatsAppSubmit}>
+              <label htmlFor="admin-whatsapp-url">Link undangan grup</label>
+              <input
+                id="admin-whatsapp-url"
+                type="url"
+                inputMode="url"
+                autoComplete="url"
+                maxLength={2048}
+                value={whatsappUrl}
+                onChange={(event) => setWhatsappUrl(event.target.value)}
+                placeholder="https://chat.whatsapp.com/..."
+              />
+              {settingsError && <p className="member-form-message is-error" role="alert">{settingsError}</p>}
+              {settingsMessage && <p className="member-form-message is-success" role="status">{settingsMessage}</p>}
+              <div className="admin-form__actions">
+                <button className="member-action-button" type="submit" disabled={savingSettings}>
+                  {savingSettings ? 'Menyimpan...' : 'Simpan link grup'}
+                </button>
+              </div>
+            </form>
+          </section>
 
           <section className="admin-card admin-editor" aria-labelledby="admin-editor-title">
             <div>
