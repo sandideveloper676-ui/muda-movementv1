@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import useAuth from '../auth/useAuth'
 import ThemeToggle from '../components/layout/ThemeToggle'
+import { createAccountWorkbook, formatAccountDate } from '../services/accountWorkbook'
 import {
   createAdminUser,
   deleteAdminUser,
@@ -28,6 +29,7 @@ export default function AdminDashboardPage() {
   const [search, setSearch] = useState('')
   const [refresh, setRefresh] = useState(0)
   const [listError, setListError] = useState('')
+  const [exportError, setExportError] = useState('')
   const [formError, setFormError] = useState('')
   const [message, setMessage] = useState('')
   const [form, setForm] = useState(emptyForm)
@@ -41,6 +43,13 @@ export default function AdminDashboardPage() {
   const [passwordConfirmation, setPasswordConfirmation] = useState('')
   const [passwordError, setPasswordError] = useState('')
   const [savingPassword, setSavingPassword] = useState(false)
+
+  function refreshUsers() {
+    setUsers(null)
+    setListError('')
+    setExportError('')
+    setRefresh((value) => value + 1)
+  }
 
   useEffect(() => {
     let active = true
@@ -118,7 +127,7 @@ export default function AdminDashboardPage() {
         setMessage('Akun baru berhasil ditambahkan.')
       }
       resetForm()
-      setRefresh((value) => value + 1)
+      refreshUsers()
     } catch (error) {
       setFormError(error.message)
     } finally {
@@ -139,9 +148,40 @@ export default function AdminDashboardPage() {
         return
       }
       setMessage(result.message)
-      setRefresh((value) => value + 1)
+      refreshUsers()
     } catch (error) {
       setListError(error.message)
+    }
+  }
+
+  function handleExport(scope) {
+    setExportError('')
+    try {
+      const exportAccounts = scope === 'users'
+        ? accountList.filter((account) => account.role === 'user')
+        : [
+          ...accountList.filter((account) => account.role === 'admin'),
+          ...accountList.filter((account) => account.role !== 'admin'),
+        ]
+      if (exportAccounts.length === 0) {
+        setExportError('Tidak ada akun yang dapat diekspor untuk pilihan ini.')
+        return
+      }
+
+      const workbook = createAccountWorkbook(exportAccounts)
+      const url = URL.createObjectURL(new Blob([workbook], {
+        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      }))
+      const link = document.createElement('a')
+      link.href = url
+      link.download = `direktori-${scope === 'users' ? 'user' : 'semua-akun'}-${new Date().toISOString().slice(0, 10)}.xlsx`
+      document.body.append(link)
+      link.click()
+      link.remove()
+      window.setTimeout(() => URL.revokeObjectURL(url), 0)
+    } catch (error) {
+      const details = error instanceof Error ? error.message : 'Kesalahan tidak diketahui.'
+      setExportError(`File Excel gagal dibuat: ${details}`)
     }
   }
 
@@ -375,17 +415,43 @@ export default function AdminDashboardPage() {
                 <p className="member-eyebrow">Direktori akun</p>
                 <h2 id="admin-users-title">User terbaru</h2>
               </div>
-              <label className="admin-search">
-                <span>Cari nama, email, atau nomor telepon</span>
-                <input
-                  type="search"
-                  value={search}
-                  onChange={(event) => setSearch(event.target.value)}
-                  placeholder="Ketik kata kunci..."
-                />
-              </label>
+              <div className="admin-users__controls">
+                <label className="admin-search">
+                  <span>Cari nama, email, atau nomor telepon</span>
+                  <input
+                    type="search"
+                    value={search}
+                    onChange={(event) => {
+                      setUsers(null)
+                      setListError('')
+                      setExportError('')
+                      setSearch(event.target.value)
+                    }}
+                    placeholder="Ketik kata kunci..."
+                  />
+                </label>
+                <div className="admin-export-actions">
+                  <button
+                    className="admin-secondary-button admin-export-button"
+                    type="button"
+                    onClick={() => handleExport('all')}
+                    disabled={users === null || Boolean(listError) || accountList.length === 0}
+                  >
+                    Unduh semua (admin di atas)
+                  </button>
+                  <button
+                    className="admin-secondary-button admin-export-button"
+                    type="button"
+                    onClick={() => handleExport('users')}
+                    disabled={users === null || Boolean(listError) || !accountList.some((account) => account.role === 'user')}
+                  >
+                    Unduh user saja
+                  </button>
+                </div>
+              </div>
             </div>
             {listError && <p className="member-form-message is-error" role="alert">{listError}</p>}
+            {exportError && <p className="member-form-message is-error" role="alert">{exportError}</p>}
             {users === null ? (
               <p className="admin-list-status" role="status">Memuat daftar akun...</p>
             ) : accountList.length === 0 ? (
@@ -410,11 +476,7 @@ export default function AdminDashboardPage() {
                         <td data-label="Email">{account.email}</td>
                         <td data-label="Telepon/WA">{account.phone}</td>
                         <td data-label="Peran"><span className={`admin-role admin-role--${account.role}`}>{account.role}</span></td>
-                        <td data-label="Tanggal daftar">
-                          {account.createdAt
-                            ? new Intl.DateTimeFormat('id-ID', { dateStyle: 'medium' }).format(new Date(account.createdAt))
-                            : '—'}
-                        </td>
+                        <td data-label="Tanggal daftar">{formatAccountDate(account.createdAt)}</td>
                         <td data-label="Aksi">
                           <div className="admin-row-actions">
                             <button type="button" onClick={() => startEditing(account)}>Edit</button>
