@@ -25,6 +25,7 @@ const emptyForm = {
 
 export default function AdminDashboardPage() {
   const { user, token, logout, setCurrentUser } = useAuth()
+  const [activeSection, setActiveSection] = useState('users')
   const [users, setUsers] = useState(null)
   const [search, setSearch] = useState('')
   const [refresh, setRefresh] = useState(0)
@@ -223,6 +224,11 @@ export default function AdminDashboardPage() {
   const joinedAt = user.createdAt
     ? new Intl.DateTimeFormat('id-ID', { dateStyle: 'medium' }).format(new Date(user.createdAt))
     : '—'
+  const sectionTitles = {
+    account: 'Info akun',
+    whatsapp: 'Grup WhatsApp',
+    users: 'Kelola akun',
+  }
 
   return (
     <main className="member-dashboard">
@@ -233,11 +239,30 @@ export default function AdminDashboardPage() {
         </Link>
         <div className="member-menu">
           <p className="member-menu__label">Administrasi</p>
-          <a className="member-menu__item" href="#account">◉ <span>Info akun</span></a>
-          <a className="member-menu__item" href="#whatsapp">↗ <span>Grup WhatsApp</span></a>
-          <a className="member-menu__item is-active" href="#users">◉ <span>Kelola akun</span></a>
-          <p className="member-menu__label member-menu__label--home">Beranda</p>
-          <Link className="member-menu__item" to="/">↗ <span>Landing Page</span></Link>
+          <button
+            className={`member-menu__item${activeSection === 'account' ? ' is-active' : ''}`}
+            type="button"
+            aria-pressed={activeSection === 'account'}
+            onClick={() => setActiveSection('account')}
+          >
+            ◉ <span>Info akun</span>
+          </button>
+          <button
+            className={`member-menu__item${activeSection === 'whatsapp' ? ' is-active' : ''}`}
+            type="button"
+            aria-pressed={activeSection === 'whatsapp'}
+            onClick={() => setActiveSection('whatsapp')}
+          >
+            ↗ <span>Grup WhatsApp</span>
+          </button>
+          <button
+            className={`member-menu__item${activeSection === 'users' ? ' is-active' : ''}`}
+            type="button"
+            aria-pressed={activeSection === 'users'}
+            onClick={() => setActiveSection('users')}
+          >
+            ◉ <span>Kelola akun</span>
+          </button>
         </div>
         <div className="member-sidebar__bottom">
           <div className="member-mini-profile">
@@ -258,15 +283,22 @@ export default function AdminDashboardPage() {
 
         <div className="member-content admin-content">
           <p className="member-eyebrow">Administrasi MUDA Movement</p>
-          <h1>Kelola akun</h1>
-          <p className="member-lead">Cari, tambah, edit, hapus akun, dan atur peran user maupun admin.</p>
+          <h1>{sectionTitles[activeSection]}</h1>
+          <p className="member-lead">
+            {activeSection === 'account' && 'Informasi akun admin dan pengaturan keamanan.'}
+            {activeSection === 'whatsapp' && 'Atur tautan grup WhatsApp yang dapat diakses member.'}
+            {activeSection === 'users' && 'Cari, tambah, edit, hapus akun, dan atur peran user maupun admin.'}
+          </p>
 
-          <div className="admin-summary" aria-live="polite">
-            <strong>{accountList.length}</strong><span>{search ? 'akun ditemukan' : 'akun terdaftar'}</span>
-            <strong>{adminCount}</strong><span>admin{search ? ' ditemukan' : ' aktif'}</span>
-          </div>
+          {activeSection === 'users' && (
+            <div className="admin-summary" aria-live="polite">
+              <strong>{accountList.length}</strong><span>{search ? 'akun ditemukan' : 'akun terdaftar'}</span>
+              <strong>{adminCount}</strong><span>admin{search ? ' ditemukan' : ' aktif'}</span>
+            </div>
+          )}
 
-          <section className="admin-card" id="account" aria-labelledby="admin-account-title">
+          {activeSection === 'account' && (
+            <section className="admin-card" id="account" aria-labelledby="admin-account-title">
             <p className="member-eyebrow">Akun yang sedang digunakan</p>
             <h2 id="admin-account-title">Info akun admin</h2>
             <dl className="admin-account-details">
@@ -308,9 +340,11 @@ export default function AdminDashboardPage() {
                 </button>
               </form>
             </div>
-          </section>
+            </section>
+          )}
 
-          <section className="admin-card" id="whatsapp" aria-labelledby="admin-whatsapp-title">
+          {activeSection === 'whatsapp' && (
+            <section className="admin-card" id="whatsapp" aria-labelledby="admin-whatsapp-title">
             <p className="member-eyebrow">Komunitas MUDA Movement</p>
             <h2 id="admin-whatsapp-title">Link grup WhatsApp</h2>
             <p className="admin-admin-note">
@@ -336,9 +370,12 @@ export default function AdminDashboardPage() {
                 </button>
               </div>
             </form>
-          </section>
+            </section>
+          )}
 
-          <section className="admin-card admin-editor" id="admin-editor" aria-labelledby="admin-editor-title">
+          {activeSection === 'users' && (
+            <>
+              <section className="admin-card admin-editor" id="admin-editor" aria-labelledby="admin-editor-title">
             <div>
               <p className="member-eyebrow">{editingId ? 'Perbarui informasi' : 'Akun baru'}</p>
               <h2 id="admin-editor-title">{editingId ? 'Edit akun' : 'Tambah akun'}</h2>
@@ -407,9 +444,9 @@ export default function AdminDashboardPage() {
                 )}
               </div>
             </form>
-          </section>
+              </section>
 
-          <section className="admin-card admin-users" id="users" aria-labelledby="admin-users-title">
+              <section className="admin-card admin-users" id="users" aria-labelledby="admin-users-title">
             <div className="admin-users__heading">
               <div>
                 <p className="member-eyebrow">Direktori akun</p>
@@ -492,7 +529,9 @@ export default function AdminDashboardPage() {
             <p className="admin-admin-note">
               Dua admin terakhir tidak bisa dihapus atau diubah menjadi user. Akun terbaru ditampilkan paling atas.
             </p>
-          </section>
+              </section>
+            </>
+          )}
         </div>
       </section>
     </main>

@@ -19,6 +19,7 @@ export default function DashboardPage() {
 
 function MemberDashboardPage() {
   const { user, token, logout, setCurrentUser } = useAuth()
+  const [activeSection, setActiveSection] = useState('profile')
   const [whatsappUrl, setWhatsappUrl] = useState('')
   const [configError, setConfigError] = useState('')
   const [name, setName] = useState(user.name)
@@ -47,6 +48,11 @@ function MemberDashboardPage() {
     ? new Intl.DateTimeFormat('id-ID', { dateStyle: 'medium' }).format(new Date(user.createdAt))
     : '—'
   const initial = user.name?.trim().charAt(0).toUpperCase() || 'M'
+  const sectionTitles = {
+    profile: 'Profil Saya',
+    whatsapp: 'Join Grup WhatsApp',
+    danger: 'Zona Danger',
+  }
 
   function handleEmailClick(event) {
     const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent)
@@ -101,9 +107,30 @@ function MemberDashboardPage() {
 
         <div className="member-menu">
           <p className="member-menu__label">Menu</p>
-          <a className="member-menu__item is-active" href="#profile">◉ <span>Profil Saya</span></a>
-          <p className="member-menu__label member-menu__label--home">Beranda</p>
-          <Link className="member-menu__item" to="/">↗ <span>Landing Page</span></Link>
+          <button
+            className={`member-menu__item${activeSection === 'profile' ? ' is-active' : ''}`}
+            type="button"
+            aria-pressed={activeSection === 'profile'}
+            onClick={() => setActiveSection('profile')}
+          >
+            ◉ <span>Profil Saya</span>
+          </button>
+          <button
+            className={`member-menu__item${activeSection === 'whatsapp' ? ' is-active' : ''}`}
+            type="button"
+            aria-pressed={activeSection === 'whatsapp'}
+            onClick={() => setActiveSection('whatsapp')}
+          >
+            ↗ <span>Join Grup WA</span>
+          </button>
+          <button
+            className={`member-menu__item${activeSection === 'danger' ? ' is-active' : ''}`}
+            type="button"
+            aria-pressed={activeSection === 'danger'}
+            onClick={() => setActiveSection('danger')}
+          >
+            ⚠ <span>Zona Danger</span>
+          </button>
         </div>
 
         <div className="member-sidebar__bottom">
@@ -125,11 +152,16 @@ function MemberDashboardPage() {
 
         <div className="member-content">
           <p className="member-eyebrow">Dashboard</p>
-          <h1>Profil Saya</h1>
-          <p className="member-lead">Selamat datang di ruang member MUDA Movement.</p>
+          <h1>{sectionTitles[activeSection]}</h1>
+          <p className="member-lead">
+            {activeSection === 'profile' && 'Kelola informasi profil dan keamanan akun Anda.'}
+            {activeSection === 'whatsapp' && 'Terhubung dengan komunitas MUDA Movement.'}
+            {activeSection === 'danger' && 'Kelola penghapusan akun Anda secara permanen.'}
+          </p>
 
-          <div className="member-cards" id="profile">
-            <section className="member-card member-card--profile">
+          <div className="member-cards">
+            {activeSection === 'profile' && (
+              <section className="member-card member-card--profile">
               <div className="member-card__heading">
                 <span className="member-avatar member-avatar--large">{initial}</span>
                 <div className="member-card__identity">
@@ -172,9 +204,11 @@ function MemberDashboardPage() {
                   {savingProfile ? 'Menyimpan...' : 'Simpan profil'}
                 </button>
               </form>
-            </section>
+              </section>
+            )}
 
-            <section className="member-card member-card--password">
+            {activeSection === 'profile' && (
+              <section className="member-card member-card--password">
               <p className="member-eyebrow">Keamanan</p>
               <h2>Lupa password?</h2>
               <p className="member-security-help">
@@ -187,28 +221,11 @@ function MemberDashboardPage() {
               >
                 Buat email ke admin
               </a>
-            </section>
+              </section>
+            )}
 
-            <section className="member-card member-card--about">
-              <p className="member-eyebrow">Learning · Developing · Empowering</p>
-              <h2>Bertumbuh dan berdampak bersama.</h2>
-              <p>
-                MUDA Movement adalah ruang bagi anak muda untuk belajar, mengembangkan potensi,
-                dan berkolaborasi menciptakan dampak positif.
-              </p>
-              <Link className="member-text-link" to="/">Kenali program kami <span aria-hidden="true">→</span></Link>
-            </section>
-
-            <section className="member-card member-card--about">
-              <p className="member-eyebrow">Tentang Kami</p>
-              <h2>Mengenal Muda Movement lebih dekat</h2>
-              <p>
-                Muda Movement adalah platform inovasi pemuda Indonesia yang membantu anak muda menemukan versi terbaik dirinya.
-              </p>
-              <Link className="member-text-link" to="/">Kenali lebih dalam <span aria-hidden="true">→</span></Link>
-            </section>
-
-            <section className="member-card member-card--whatsapp">
+            {activeSection === 'whatsapp' && (
+              <section className="member-card member-card--whatsapp">
               <div>
                 <p className="member-eyebrow">Terhubung dengan komunitas</p>
                 <h2>Gabung grup WhatsApp</h2>
@@ -217,9 +234,11 @@ function MemberDashboardPage() {
               {whatsappUrl
                 ? <a className="member-whatsapp-button" href={whatsappUrl} target="_blank" rel="noopener noreferrer">Join WhatsApp Group <span aria-hidden="true">↗</span></a>
                 : <p className="member-config-message">{configError || 'Tautan grup belum tersedia. Silakan hubungi admin MUDA Movement.'}</p>}
-            </section>
+              </section>
+            )}
 
-            <section className="member-card member-card--danger">
+            {activeSection === 'danger' && (
+              <section className="member-card member-card--danger">
               <div>
                 <p className="member-eyebrow">Zona berbahaya</p>
                 <h2>Hapus akun</h2>
@@ -240,7 +259,8 @@ function MemberDashboardPage() {
                   {deletingAccount ? 'Menghapus akun...' : 'Hapus akun saya'}
                 </button>
               </form>
-            </section>
+              </section>
+            )}
           </div>
         </div>
       </section>
