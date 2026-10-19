@@ -100,7 +100,7 @@ export const portfolio = {
 
 export const events = {
   eyebrow: 'Portfolio Kegiatan',
-  title: 'Kegiatan yang telah diselenggarakan oleh Muda Movement',
+  title: 'Kegiatan yang telah diselenggarakan',
   description: 'Kegiatan dan event yang diselenggarakan oleh Muda Movement untuk mendukung pengembangan diri anak muda.',
   items: [
     { name: 'Upgrade diri', date: 'Upgrading', photo: trainingEventPhoto },
