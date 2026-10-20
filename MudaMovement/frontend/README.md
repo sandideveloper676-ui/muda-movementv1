@@ -214,3 +214,4 @@ Setiap komponen punya file `.css` dengan nama sama di sebelahnya.
 | Tambah ikon                    | `src/components/ui/Icon.jsx`               |
 | Tambah logo partner           | `Assets/brands/`                           |
 | Hubungkan form kontak ke backend | `handleSubmit` di `sections/Contact.jsx` |
+

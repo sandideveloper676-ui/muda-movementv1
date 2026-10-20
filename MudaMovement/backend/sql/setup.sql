@@ -1,5 +1,4 @@
 -- Setup MUDA Movement untuk MySQL 8+ atau TiDB.
--- Jalankan seluruh file ini dari awal sampai akhir menggunakan akun DB yang memiliki izin
 -- CREATE DATABASE, CREATE TABLE, ALTER TABLE, dan INSERT.
 
 CREATE DATABASE IF NOT EXISTS Muda_movement
